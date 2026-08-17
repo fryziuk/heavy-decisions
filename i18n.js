@@ -1,0 +1,217 @@
+const EN = {
+  'tagline': '2× full body · 2 hard sets',
+  'tagline.setup': 'Personalize your starting weights',
+  'language': 'Language', 'language.en': 'English', 'language.uk': 'Українська',
+  'bmi': 'BMI',
+  'tab.train': 'Train', 'tab.history': 'History', 'tab.body': 'Body', 'tab.program': 'Program', 'tab.data': 'Data',
+  'rest': 'rest', 'skip': 'Skip', 'paused': 'paused', 'pause': 'Pause session', 'resume': 'Resume session', 'finishSession': 'Finish session',
+
+  'setup.title': 'Set your baseline',
+  'setup.intro': 'Three numbers personalize every starting load. You can change them later in Data.',
+  'setup.height': 'Height (cm)', 'setup.mass': 'Body mass (kg)', 'setup.bench': 'Bench press estimated 1RM (kg)',
+  'setup.heightExample': 'e.g. 180', 'setup.massExample': 'e.g. 82', 'setup.benchExample': 'e.g. 117',
+  'setup.benchHelp': 'Use your heaviest single or an estimate. For reference, 100 kg × 5 reps is about 116.7 kg.',
+  'setup.create': 'Create my program',
+  'setup.caution': 'Starter weights are estimates. On your first workout, adjust them to finish each set near the prescribed 2 RIR.',
+
+  'train.startDay': 'Start Day {day}', 'train.upNext': 'up next', 'train.last': 'Last: {name}',
+  'train.setsTotal': '{sets} sets · {volume} {unit} total', 'train.inProgress': '{name} · in progress',
+  'train.notes': 'Session notes', 'train.notesPlaceholder': 'Sleep, energy, niggles…', 'train.discard': 'Discard session',
+  'train.lastSet': 'last', 'train.noHistory': 'no history yet', 'train.target': 'target', 'train.best': 'best',
+  'train.set1': 'SET 1', 'train.set2': 'SET 2', 'train.top': 'TOP', 'train.back': 'BACK',
+  'train.reps': 'reps', 'train.undoSet': 'Undo set', 'train.logSet': 'Log set', 'train.less': 'less', 'train.more': 'more',
+  'train.howTo': 'How to do {name}',
+
+  'history.title': 'History', 'history.empty': 'Nothing logged yet.', 'history.sessions': 'sessions',
+  'history.perWeek': 'per week', 'history.totalVolume': 'total volume', 'history.sets': '{count} sets',
+  'history.delete': 'Delete session',
+
+  'body.profile': 'Profile', 'body.height': 'height cm', 'body.baseline': 'baseline kg', 'body.bench': 'bench 1RM kg',
+  'body.bmiHelp': 'BMI is a simple height-to-mass ratio, not a diagnosis or body-fat measurement.',
+  'body.title': 'Bodyweight', 'body.example': 'e.g. 82.4', 'body.save': 'Save',
+  'body.savedToday': 'Saved against today’s date ({date}). Saving twice overwrites.',
+  'body.latest': 'latest {unit}', 'body.average': '7-day avg', 'body.allTime': 'all time', 'body.entries': 'Entries',
+  'body.delete': 'delete', 'body.empty': 'No weigh-ins yet. Same time of day, after waking, is the most consistent.',
+  'body.trend': 'Bodyweight trend',
+
+  'program.title': 'Program',
+  'program.intro': 'Two full-body days, each slot holding the variations you rotate between. Change the pick mid-session on the Train tab — history follows the exercise, so progression stays honest.',
+  'program.day': 'Day {day}', 'program.dayName': 'Day name', 'program.addSlot': '+ Add exercise slot',
+  'program.reset': 'Reset', 'program.restore': 'Restore default program', 'program.resetHelp': 'Your logged sessions and bodyweight are kept.',
+  'program.up': 'up', 'program.down': 'down', 'program.remove': 'remove',
+  'program.variations': 'Variations — tap to make it the default pick', 'program.addVariation': '+ add a variation…',
+  'program.newExercise': '＋ new exercise…', 'program.structure': 'Structure', 'program.straight2': '2 straight sets',
+  'program.topBack': 'Top + back-off', 'program.set2Technique': 'Set 2 technique', 'program.straight': 'Straight set',
+  'program.restPause': 'Rest-pause', 'program.lengthened': 'Lengthened partials', 'program.repsMin': 'Reps min',
+  'program.repsMax': 'Reps max', 'program.backMin': 'Back min', 'program.backMax': 'Back max',
+  'program.increment': 'Increment ({unit})', 'program.cue': 'Form cue (shown while training)',
+
+  'data.profileTitle': 'Profile & starter weights', 'data.currentBmi': 'Current BMI',
+  'data.updateProfile': 'Update profile & starter weights',
+  'data.profileHelp': 'This rescales only starter suggestions. Logged training and progression history stay unchanged.',
+  'data.settings': 'Settings', 'data.unit': 'Unit label', 'data.sessionTarget': 'Session target (min)',
+  'data.restCompound': 'Rest — compound (s)', 'data.restIsolation': 'Rest — isolation (s)',
+  'data.defaultReps': 'Default reps', 'data.defaultRir': 'Default reps in reserve', 'data.beep': 'Beep when the rest timer ends',
+  'data.unitHelp': 'Switching unit relabels the app; it does not convert weights you already logged.',
+  'data.backup': 'Backup',
+  'data.backupHelp': 'Data stays on this device — {sessions} sessions, {weighIns} weigh-ins, {size} KB, kept in two copies so an evicted cache self-heals. Export now and then: a file you hold is the only backup that survives losing the phone.',
+  'data.download': 'Download backup (.json)', 'data.copy': 'Copy backup to clipboard',
+  'data.restoreFile': 'Restore from a backup file', 'data.restorePaste': '…or paste backup JSON', 'data.restore': 'Restore from pasted JSON',
+  'data.danger': 'Danger zone', 'data.erase': 'Erase all data', 'data.install': 'Install on iPhone',
+  'data.installHelp': 'Safari → Share → Add to Home Screen. It then opens full-screen, works offline in the gym, and its saved data is more durable than a plain browser tab.',
+
+  'date.today': 'today', 'date.yesterday': 'yesterday', 'date.daysAgo': '{count} days ago', 'date.weeksAgo': '{count} weeks ago',
+  'msg.noSets': 'No sets logged', 'msg.sessionSaved': 'Session saved', 'msg.enterReps': 'Enter reps first',
+  'msg.bodyweightSaved': 'Bodyweight saved', 'msg.enterWeight': 'Enter a weight',
+  'msg.heightRange': 'Enter height between 120 and 230 cm', 'msg.massRange': 'Enter body mass between 35 and 250 kg',
+  'msg.benchRange': 'Enter bench 1RM between 20 and 300 kg', 'msg.ready': 'Ready · BMI {bmi}', 'msg.profileUpdated': 'Profile updated',
+  'msg.invalidJson': 'That is not valid JSON', 'msg.notBackup': 'Not a Pump Log backup', 'msg.backupRestored': 'Backup restored',
+  'msg.backupCopied': 'Backup copied', 'msg.clipboardBlocked': 'Clipboard blocked — use download', 'msg.allErased': 'All data erased',
+  'msg.saveFailed': 'Could not save — storage full?', 'msg.recovered': 'Recovered data from backup copy',
+  'msg.undoBeforeSwap': 'Undo this slot’s logged sets before swapping exercise',
+  'confirm.bodyweightSet': 'No weight entered — log this set at bodyweight (0)?',
+  'confirm.finish': 'Finish and save this session?', 'confirm.discardEmpty': 'No sets logged — discard this session?',
+  'confirm.discard': 'Discard this session? Logged sets will be lost.', 'confirm.deleteSession': 'Delete this session permanently?',
+  'confirm.removeSlot': 'Remove this slot from the program?', 'confirm.resetProgram': 'Restore the default two-day program? Your logs are kept.',
+  'confirm.restore': 'Restore {sessions} sessions and {weighIns} weigh-ins? This replaces what is on this device.',
+  'confirm.erase': 'Erase every session, weigh-in and program change on this device?', 'confirm.eraseReally': 'Really erase? This cannot be undone.',
+  'prompt.exerciseName': 'Exercise name', 'confirm.compound': 'Treat as a compound (longer rest)? OK = compound, Cancel = isolation',
+  'program.newSlot': 'New slot',
+
+  'default.dayA': 'Full Body A', 'default.dayB': 'Full Body B',
+};
+
+const UK = {
+  'tagline': '2× усе тіло · 2 важкі підходи',
+  'tagline.setup': 'Персоналізуйте стартові ваги',
+  'language': 'Мова', 'language.en': 'English', 'language.uk': 'Українська',
+  'bmi': 'ІМТ',
+  'tab.train': 'Тренування', 'tab.history': 'Історія', 'tab.body': 'Тіло', 'tab.program': 'Програма', 'tab.data': 'Дані',
+  'rest': 'відпочинок', 'skip': 'Пропустити', 'paused': 'пауза', 'pause': 'Призупинити тренування', 'resume': 'Продовжити тренування', 'finishSession': 'Завершити тренування',
+
+  'setup.title': 'Задайте свої параметри',
+  'setup.intro': 'Три числа персоналізують усі стартові ваги. Їх можна змінити пізніше в розділі «Дані».',
+  'setup.height': 'Зріст (см)', 'setup.mass': 'Маса тіла (кг)', 'setup.bench': 'Орієнтовний 1ПМ у жимі лежачи (кг)',
+  'setup.heightExample': 'напр. 180', 'setup.massExample': 'напр. 82', 'setup.benchExample': 'напр. 117',
+  'setup.benchHelp': 'Вкажіть найважчий одиночний повтор або оцінку. Для орієнтиру: 100 кг × 5 повторів — це приблизно 116,7 кг.',
+  'setup.create': 'Створити мою програму',
+  'setup.caution': 'Стартові ваги орієнтовні. На першому тренуванні скоригуйте їх, щоб завершувати підходи близько до заданих 2 RIR.',
+
+  'train.startDay': 'Почати день {day}', 'train.upNext': 'наступний', 'train.last': 'Останнє: {name}',
+  'train.setsTotal': '{sets} підходів · {volume} {unit} загалом', 'train.inProgress': '{name} · триває',
+  'train.notes': 'Нотатки тренування', 'train.notesPlaceholder': 'Сон, енергія, дискомфорт…', 'train.discard': 'Скасувати тренування',
+  'train.lastSet': 'минулого разу', 'train.noHistory': 'історії ще немає', 'train.target': 'ціль', 'train.best': 'рекорд',
+  'train.set1': 'ПІДХІД 1', 'train.set2': 'ПІДХІД 2', 'train.top': 'ВАЖКИЙ', 'train.back': 'ПОЛЕГШЕНИЙ',
+  'train.reps': 'повт.', 'train.undoSet': 'Скасувати підхід', 'train.logSet': 'Записати підхід', 'train.less': 'менше', 'train.more': 'більше',
+  'train.howTo': 'Як виконувати: {name}',
+
+  'history.title': 'Історія', 'history.empty': 'Ще нічого не записано.', 'history.sessions': 'тренувань',
+  'history.perWeek': 'на тиждень', 'history.totalVolume': 'загальний обсяг', 'history.sets': '{count} підходів',
+  'history.delete': 'Видалити тренування',
+
+  'body.profile': 'Профіль', 'body.height': 'зріст, см', 'body.baseline': 'початкова вага, кг', 'body.bench': '1ПМ жиму, кг',
+  'body.bmiHelp': 'ІМТ — це просте співвідношення зросту й маси, а не діагноз чи вимір відсотка жиру.',
+  'body.title': 'Маса тіла', 'body.example': 'напр. 82,4', 'body.save': 'Зберегти',
+  'body.savedToday': 'Збережено за сьогоднішню дату ({date}). Повторне збереження перезапише значення.',
+  'body.latest': 'остання, {unit}', 'body.average': 'середнє за 7 днів', 'body.allTime': 'за весь час', 'body.entries': 'Записи',
+  'body.delete': 'видалити', 'body.empty': 'Зважувань ще немає. Найпослідовніше — зважуватися в той самий час після пробудження.',
+  'body.trend': 'Динаміка маси тіла',
+
+  'program.title': 'Програма',
+  'program.intro': 'Два дні на все тіло; у кожному слоті зібрані варіанти вправ для ротації. Змінюйте вправу під час тренування — історія прив’язана до вправи, тому прогрес лишається точним.',
+  'program.day': 'День {day}', 'program.dayName': 'Назва дня', 'program.addSlot': '+ Додати слот вправи',
+  'program.reset': 'Скидання', 'program.restore': 'Відновити стандартну програму', 'program.resetHelp': 'Записані тренування й маса тіла збережуться.',
+  'program.up': 'вгору', 'program.down': 'вниз', 'program.remove': 'видалити',
+  'program.variations': 'Варіанти — торкніться, щоб зробити стандартним', 'program.addVariation': '+ додати варіант…',
+  'program.newExercise': '＋ нова вправа…', 'program.structure': 'Структура', 'program.straight2': '2 однакові підходи',
+  'program.topBack': 'Важкий + полегшений', 'program.set2Technique': 'Техніка 2-го підходу', 'program.straight': 'Звичайний підхід',
+  'program.restPause': 'Відпочинок-пауза', 'program.lengthened': 'Часткові в розтягненні', 'program.repsMin': 'Мін. повторів',
+  'program.repsMax': 'Макс. повторів', 'program.backMin': 'Мін. полегшеного', 'program.backMax': 'Макс. полегшеного',
+  'program.increment': 'Крок ({unit})', 'program.cue': 'Підказка техніки (під час тренування)',
+
+  'data.profileTitle': 'Профіль і стартові ваги', 'data.currentBmi': 'Поточний ІМТ',
+  'data.updateProfile': 'Оновити профіль і стартові ваги',
+  'data.profileHelp': 'Змінюються лише стартові підказки. Записані тренування та історія прогресу залишаються без змін.',
+  'data.settings': 'Налаштування', 'data.unit': 'Одиниця ваги', 'data.sessionTarget': 'Цільова тривалість (хв)',
+  'data.restCompound': 'Відпочинок — базова вправа (с)', 'data.restIsolation': 'Відпочинок — ізоляція (с)',
+  'data.defaultReps': 'Стандартні повтори', 'data.defaultRir': 'Стандартний запас повторів', 'data.beep': 'Сигнал після завершення відпочинку',
+  'data.unitHelp': 'Зміна одиниці лише змінює підпис; раніше записані ваги не конвертуються.',
+  'data.backup': 'Резервна копія',
+  'data.backupHelp': 'Дані зберігаються на цьому пристрої — {sessions} тренувань, {weighIns} зважувань, {size} КБ, у двох копіях для самовідновлення кешу. Час від часу експортуйте файл: лише він переживе втрату телефона.',
+  'data.download': 'Завантажити копію (.json)', 'data.copy': 'Скопіювати резервну копію',
+  'data.restoreFile': 'Відновити з файлу', 'data.restorePaste': '…або вставте JSON резервної копії', 'data.restore': 'Відновити з вставленого JSON',
+  'data.danger': 'Небезпечна зона', 'data.erase': 'Стерти всі дані', 'data.install': 'Встановити на iPhone',
+  'data.installHelp': 'Safari → Поширити → На початковий екран. Застосунок відкриватиметься на весь екран, працюватиме офлайн у залі, а дані зберігатимуться надійніше, ніж у звичайній вкладці.',
+
+  'date.today': 'сьогодні', 'date.yesterday': 'вчора', 'date.daysAgo': '{count} дн. тому', 'date.weeksAgo': '{count} тиж. тому',
+  'msg.noSets': 'Не записано жодного підходу', 'msg.sessionSaved': 'Тренування збережено', 'msg.enterReps': 'Спочатку введіть повтори',
+  'msg.bodyweightSaved': 'Масу тіла збережено', 'msg.enterWeight': 'Введіть вагу',
+  'msg.heightRange': 'Введіть зріст від 120 до 230 см', 'msg.massRange': 'Введіть масу від 35 до 250 кг',
+  'msg.benchRange': 'Введіть 1ПМ жиму від 20 до 300 кг', 'msg.ready': 'Готово · ІМТ {bmi}', 'msg.profileUpdated': 'Профіль оновлено',
+  'msg.invalidJson': 'Це некоректний JSON', 'msg.notBackup': 'Це не резервна копія Pump Log', 'msg.backupRestored': 'Резервну копію відновлено',
+  'msg.backupCopied': 'Резервну копію скопійовано', 'msg.clipboardBlocked': 'Буфер обміну заблоковано — скористайтеся завантаженням', 'msg.allErased': 'Усі дані стерто',
+  'msg.saveFailed': 'Не вдалося зберегти — сховище заповнене?', 'msg.recovered': 'Дані відновлено з резервної копії',
+  'msg.undoBeforeSwap': 'Скасуйте записані підходи цього слота перед заміною вправи',
+  'confirm.bodyweightSet': 'Вага не вказана — записати підхід із власною вагою (0)?',
+  'confirm.finish': 'Завершити й зберегти тренування?', 'confirm.discardEmpty': 'Підходів немає — скасувати тренування?',
+  'confirm.discard': 'Скасувати тренування? Записані підходи буде втрачено.', 'confirm.deleteSession': 'Назавжди видалити це тренування?',
+  'confirm.removeSlot': 'Видалити цей слот із програми?', 'confirm.resetProgram': 'Відновити стандартну дводенну програму? Ваші записи збережуться.',
+  'confirm.restore': 'Відновити {sessions} тренувань і {weighIns} зважувань? Поточні дані на пристрої буде замінено.',
+  'confirm.erase': 'Стерти всі тренування, зважування та зміни програми на цьому пристрої?', 'confirm.eraseReally': 'Точно стерти? Це неможливо скасувати.',
+  'prompt.exerciseName': 'Назва вправи', 'confirm.compound': 'Вважати базовою вправою (довший відпочинок)? OK = базова, Скасувати = ізоляція',
+  'program.newSlot': 'Новий слот',
+
+  'default.dayA': 'Все тіло A', 'default.dayB': 'Все тіло B',
+  'slot.Quads': 'Квадрицепси', 'slot.Horizontal Push': 'Горизонтальний жим', 'slot.Horizontal Pull': 'Горизонтальна тяга',
+  'slot.Hamstrings': 'Задня поверхня стегна', 'slot.Side Delts': 'Середні дельти', 'slot.Triceps': 'Трицепс',
+  'slot.Hinge': 'Тазостегновий рух', 'slot.Vertical Pull': 'Вертикальна тяга', 'slot.Vertical Push': 'Вертикальний жим',
+  'slot.Biceps': 'Біцепс', 'slot.Calves': 'Литки', 'slot.New slot': 'Новий слот',
+
+  'exercise.hack-squat': 'Гак-присідання', 'exercise.back-squat': 'Присідання зі штангою',
+  'exercise.pendulum-squat': 'Маятникові присідання', 'exercise.smith-squat': 'Присідання в Сміті',
+  'exercise.leg-press': 'Жим ногами', 'exercise.bulgarian': 'Болгарські присідання', 'exercise.leg-ext': 'Розгинання ніг',
+  'exercise.rdl': 'Румунська тяга', 'exercise.good-morning': 'Нахили «Доброго ранку»', 'exercise.back-ext': 'Гіперекстензія 45°',
+  'exercise.seated-curl': 'Згинання ніг сидячи', 'exercise.lying-curl': 'Згинання ніг лежачи', 'exercise.nordic': 'Нордичні згинання',
+  'exercise.inc-bb-press': 'Жим штанги під кутом', 'exercise.inc-db-press': 'Жим гантелей під кутом',
+  'exercise.flat-bb-press': 'Жим штанги лежачи', 'exercise.machine-press': 'Жим у тренажері', 'exercise.dip': 'Віджимання на брусах із вагою',
+  'exercise.pec-deck': 'Пек-дек / кросовер', 'exercise.cs-row': 'Тяга з опорою грудьми', 'exercise.seal-row': 'Тяга лежачи на лаві',
+  'exercise.cable-row': 'Горизонтальна тяга блока', 'exercise.db-row': 'Тяга гантелі однією рукою', 'exercise.t-bar': 'Тяга Т-грифа',
+  'exercise.pulldown': 'Тяга верхнього блока', 'exercise.neutral-pulldown': 'Тяга верхнього блока нейтральним хватом',
+  'exercise.pullup': 'Підтягування з вагою', 'exercise.pullover': 'Пуловер у тренажері',
+  'exercise.db-ohp': 'Жим гантелей сидячи', 'exercise.machine-ohp': 'Жим над головою в тренажері', 'exercise.bb-ohp': 'Жим штанги стоячи',
+  'exercise.cable-lat-raise': 'Відведення руки на блоці', 'exercise.db-lat-raise': 'Розведення гантелей стоячи',
+  'exercise.machine-lat-raise': 'Розведення рук у тренажері', 'exercise.rear-delt': 'Розведення на задню дельту',
+  'exercise.oh-cable-ext': 'Розгинання рук на блоці над головою', 'exercise.skull': 'Французький жим EZ-штанги',
+  'exercise.pushdown': 'Розгинання рук на верхньому блоці', 'exercise.dip-machine': 'Віджимання на трицепс у тренажері',
+  'exercise.inc-db-curl': 'Згинання гантелей на похилій лаві', 'exercise.ez-curl': 'Згинання рук з EZ-штангою',
+  'exercise.cable-curl': 'Згинання рук на блоці', 'exercise.preacher': 'Згинання на лаві Скотта', 'exercise.hammer': 'Молоткові згинання',
+  'exercise.standing-calf': 'Підйоми на носки стоячи', 'exercise.seated-calf': 'Підйоми на носки сидячи',
+  'exercise.press-calf': 'Підйоми на носки в жимі ногами', 'exercise.ab-crunch': 'Скручування на блоці', 'exercise.hanging-leg': 'Підйом ніг у висі',
+
+  'cue.a1': 'глибоко, контролюйте опускання', 'cue.a2': 'повне розтягнення внизу, без відбиву',
+  'cue.a3': 'вага однієї гантелі; тримайте корпус нерухомо', 'cue.a4': 'сидячи краще за лежачи — м’язи повністю розтягнені',
+  'cue.a5': 'вага однієї гантелі; без розгойдування', 'cue.a6': 'вага блока залежить від тренажера; лікті нерухомі',
+  'cue.b1': 'відводьте таз назад, відчуйте розтягнення задньої поверхні стегна', 'cue.b2': 'вага блока залежить від тренажера; повністю витягуйтеся між повторами',
+  'cue.b3': 'вага залежить від тренажера; стабільна позиція й контрольовані повтори', 'cue.b4': 'тренажери різняться; глибоко згинайте коліна, повільно опускайте',
+  'cue.b5': 'вага однієї гантелі; не рухайте плечем', 'cue.b6': 'тренажери різняться; пауза в глибокому розтягненні',
+};
+
+export function normalizeLanguage(language) {
+  return String(language || '').toLowerCase().startsWith('uk') ? 'uk' : 'en';
+}
+
+export function translate(language, key, values = {}, fallback = key) {
+  const lang = normalizeLanguage(language);
+  const template = (lang === 'uk' ? UK[key] : undefined) ?? EN[key] ?? fallback;
+  return String(template).replace(/\{(\w+)\}/g, (_, name) => values[name] ?? `{${name}}`);
+}
+
+export function missingTranslations(language) {
+  const dictionary = normalizeLanguage(language) === 'uk' ? UK : EN;
+  return Object.keys(EN).filter(key => dictionary[key] === undefined);
+}
+
+export function hasTranslation(language, key) {
+  const dictionary = normalizeLanguage(language) === 'uk' ? UK : EN;
+  return dictionary[key] !== undefined;
+}

@@ -7,11 +7,13 @@ import {
   bestTopWeight, calculateBmi, lastPerformance, parseDecimal, progressionTarget,
   scaleStarterWeight, strengthScale, updateRange,
 } from './domain.js';
+import { normalizeLanguage, translate } from './i18n.js';
 
 const KEY = 'pumplog.v1';
 const PROGRAM_REV = 2;
 const $ = (s, r = document) => r.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const preferredLanguage = () => normalizeLanguage(typeof navigator === 'undefined' ? 'en' : navigator.language);
 
 /* ------------------------------------------------------------------ library */
 /* kind drives the default rest period (compound = long, isolation = short).   */
@@ -89,7 +91,7 @@ function seed() {
   return {
     v: 1,
     programRev: PROGRAM_REV,
-    settings: { unit: 'kg', restC: 180, restI: 120, targetMin: 60, beep: true, defReps: 8, defRir: 2 },
+    settings: { language: preferredLanguage(), unit: 'kg', restC: 180, restI: 120, targetMin: 60, beep: true, defReps: 8, defRir: 2 },
     profile: null,
     exercises: ex,
     program: seedProgram(),
@@ -191,6 +193,7 @@ function sanitizeProfile(value) {
 /* -------------------------------------------------------------------- state */
 
 let S = load();
+let setupDraft = {};
 
 function load() {
   try {
@@ -273,7 +276,7 @@ function flushSave() {
     localStorage.setItem(KEY, json);
     idbPut(json);
   }
-  catch (e) { toast('Could not save — storage full?'); }
+  catch (e) { toast(tr('msg.saveFailed')); }
 }
 
 /* --- durability: mirror the whole state into IndexedDB ------------------
@@ -336,9 +339,27 @@ addEventListener('visibilitychange', () => { if (document.hidden) flushSave(); }
 
 /* ------------------------------------------------------------------ helpers */
 
-const exName = id => (S.exercises[id] ? S.exercises[id].name : id);
+const L = () => normalizeLanguage(S.settings.language);
+const tr = (key, values, fallback) => translate(L(), key, values, fallback);
+const exName = id => tr(`exercise.${id}`, {}, S.exercises[id] ? S.exercises[id].name : id);
 const isComp = id => (S.exercises[id] ? S.exercises[id].kind : 'c') === 'c';
 const U = () => S.settings.unit;
+
+const DEFAULT_CUES = {
+  a1: 'deep, control the negative', a2: 'full stretch at the bottom, no bounce',
+  a3: 'weight is per dumbbell; keep torso still', a4: 'seated beats lying — hams fully lengthened',
+  a5: 'weight is per dumbbell; no swinging', a6: 'stack varies by machine; keep elbows fixed',
+  b1: 'push hips back, feel the hamstring stretch', b2: 'stack varies; full hang between reps',
+  b3: 'stack varies; stable setup and controlled reps', b4: 'machine varies; deep knee bend, slow eccentric',
+  b5: 'weight is per dumbbell; keep shoulder still', b6: 'machine varies; pause in the deep stretch',
+};
+
+const programName = (day, fallback) => {
+  const value = S.program[day] ? S.program[day].name : fallback;
+  return value === `Full Body ${day}` ? tr(`default.day${day}`) : value;
+};
+const slotLabel = sl => tr(`slot.${sl.label}`, {}, sl.label);
+const cueText = sl => DEFAULT_CUES[sl.id] === sl.cue ? tr(`cue.${sl.id}`, {}, sl.cue) : sl.cue;
 
 const num = parseDecimal;
 const trim = n => (Math.round(n * 100) / 100).toString();
@@ -352,15 +373,15 @@ function niceDate(t) {
   const d = new Date(t), now = new Date();
   const same = d.toDateString() === now.toDateString();
   const yest = new Date(now.getTime() - 864e5).toDateString() === d.toDateString();
-  const s = d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
-  return same ? 'Today' : yest ? 'Yesterday' : s;
+  const s = d.toLocaleDateString(L() === 'uk' ? 'uk-UA' : undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+  return same ? tr('date.today') : yest ? tr('date.yesterday') : s;
 }
 
 function ago(t) {
   const mid = x => { const d = new Date(x); d.setHours(0, 0, 0, 0); return d.getTime(); };
   const days = Math.round((mid(Date.now()) - mid(t)) / 864e5);
-  return days <= 0 ? 'today' : days === 1 ? 'yesterday' : days < 14 ? days + ' days ago'
-    : Math.round(days / 7) + ' weeks ago';
+  return days <= 0 ? tr('date.today') : days === 1 ? tr('date.yesterday') : days < 14
+    ? tr('date.daysAgo', { count: days }) : tr('date.weeksAgo', { count: Math.round(days / 7) });
 }
 
 const e1rm = (w, r) => (r > 0 ? w * (1 + r / 30) : 0);
@@ -406,8 +427,18 @@ function beep() {
 
 function render() {
   const needsSetup = !S.profile;
+  document.documentElement.lang = L();
+  $('#topline').textContent = tr(needsSetup ? 'tagline.setup' : 'tagline');
+  const tabKeys = { train: 'tab.train', history: 'tab.history', body: 'tab.body', program: 'tab.program', data: 'tab.data' };
+  document.querySelectorAll('#tabs button').forEach(button => {
+    const label = button.querySelector('span');
+    if (label) label.textContent = tr(tabKeys[button.dataset.tab]);
+  });
+  $('#rest .restInfo i').textContent = tr('rest');
+  $('[data-rest="skip"]').textContent = tr('skip');
+  $('#pauseBtn').setAttribute('aria-label', tr(S.active && S.active.pausedAt ? 'resume' : 'pause'));
+  $('[data-act="stopSession"]').setAttribute('aria-label', tr('finishSession'));
   $('#tabs').classList.toggle('hidden', needsSetup);
-  $('#topline').textContent = needsSetup ? 'Personalize your starting weights' : '2× full body · 2 hard sets';
   if (needsSetup) {
     $('#view').innerHTML = onboarding();
     tick();
@@ -423,21 +454,26 @@ function onboarding() {
   return `
     <section class="onboarding">
       <div class="setupMark">1</div>
-      <h1>Set your baseline</h1>
-      <p class="muted">Three numbers personalize every starting load. You can change them later in Data.</p>
+      <h1>${tr('setup.title')}</h1>
+      <p class="muted">${tr('setup.intro')}</p>
       <div class="card setupCard">
+        <label class="fld"><span>${tr('language')}</span>
+          <select data-act="language">
+            <option value="en" ${L() === 'en' ? 'selected' : ''}>${tr('language.en')}</option>
+            <option value="uk" ${L() === 'uk' ? 'selected' : ''}>${tr('language.uk')}</option>
+          </select></label>
         <div class="grid2">
-          <label class="fld"><span>Height (cm)</span>
-            <input id="setupHeight" inputmode="decimal" autocomplete="off" placeholder="e.g. 180"></label>
-          <label class="fld"><span>Body mass (kg)</span>
-            <input id="setupMass" inputmode="decimal" autocomplete="off" placeholder="e.g. 82"></label>
+          <label class="fld"><span>${tr('setup.height')}</span>
+            <input id="setupHeight" inputmode="decimal" autocomplete="off" placeholder="${tr('setup.heightExample')}" value="${esc(setupDraft.height || '')}"></label>
+          <label class="fld"><span>${tr('setup.mass')}</span>
+            <input id="setupMass" inputmode="decimal" autocomplete="off" placeholder="${tr('setup.massExample')}" value="${esc(setupDraft.mass || '')}"></label>
         </div>
-        <label class="fld"><span>Bench press estimated 1RM (kg)</span>
-          <input id="setupBench" inputmode="decimal" autocomplete="off" placeholder="e.g. 117"></label>
-        <div class="tiny muted">Use your heaviest single or an estimate. For reference, 100 kg × 5 reps is about 116.7 kg.</div>
-        <button class="primary big" style="margin-top:16px" data-act="saveProfile" data-source="setup">Create my program</button>
+        <label class="fld"><span>${tr('setup.bench')}</span>
+          <input id="setupBench" inputmode="decimal" autocomplete="off" placeholder="${tr('setup.benchExample')}" value="${esc(setupDraft.bench || '')}"></label>
+        <div class="tiny muted">${tr('setup.benchHelp')}</div>
+        <button class="primary big" style="margin-top:16px" data-act="saveProfile" data-source="setup">${tr('setup.create')}</button>
       </div>
-      <div class="tiny muted center">Starter weights are estimates. On your first workout, adjust them to finish each set near the prescribed 2 RIR.</div>
+      <div class="tiny muted center">${tr('setup.caution')}</div>
     </section>`;
 }
 
@@ -456,16 +492,20 @@ function train() {
       <div class="startChoices">
         ${['A', 'B'].map(day => `
           <button class="startBig" data-act="start" data-day="${day}">
-            <b>Start Day ${day}</b>
-            <i>${esc(S.program[day].name)}${day === nd ? ' &middot; up next' : ''}</i>
+            <b>${tr('train.startDay', { day })}</b>
+            <i>${esc(programName(day))}${day === nd ? ` &middot; ${tr('train.upNext')}` : ''}</i>
           </button>`).join('')}
       </div>
       ${last ? `
         <div class="card small">
-          <div class="row spread"><b>Last: ${esc(S.program[last.day] ? S.program[last.day].name : 'Day ' + last.day)}</b>
+          <div class="row spread"><b>${tr('train.last', { name: esc(programName(last.day, tr('program.day', { day: last.day }))) })}</b>
             <span class="muted">${ago(last.end || last.start)}</span></div>
           <div class="muted" style="margin-top:6px">
-            ${last.sets.length} sets &middot; ${Math.round(last.sets.reduce((a, s) => a + s.weight * s.reps, 0)).toLocaleString()} ${U()} total
+            ${tr('train.setsTotal', {
+              sets: last.sets.length,
+              volume: Math.round(last.sets.reduce((a, s) => a + s.weight * s.reps, 0)).toLocaleString(L() === 'uk' ? 'uk-UA' : undefined),
+              unit: U(),
+            })}
             ${last.end ? ' &middot; ' + mmss((last.dur !== undefined ? last.dur : last.end - last.start) / 1000) : ''}
           </div>
         </div>` : ''}`;
@@ -473,13 +513,13 @@ function train() {
 
   const A = S.active, day = S.program[A.day];
   return `
-    <h2>${esc(day.name)} &middot; in progress</h2>
+    <h2>${tr('train.inProgress', { name: esc(programName(A.day)) })}</h2>
     ${day.slots.map(sl => slotCard(sl, A)).join('')}
     <div class="card">
-      <label class="fld"><span>Session notes</span>
-        <textarea rows="2" data-act="notes" placeholder="Sleep, energy, niggles…">${esc(A.notes || '')}</textarea></label>
-      <button class="primary big" data-act="finish">Finish session</button>
-      <button class="ghost" style="width:100%;margin-top:8px" data-act="abandon">Discard session</button>
+      <label class="fld"><span>${tr('train.notes')}</span>
+        <textarea rows="2" data-act="notes" placeholder="${tr('train.notesPlaceholder')}">${esc(A.notes || '')}</textarea></label>
+      <button class="primary big" data-act="finish">${tr('finishSession')}</button>
+      <button class="ghost" style="width:100%;margin-top:8px" data-act="abandon">${tr('train.discard')}</button>
     </div>`;
 }
 
@@ -494,22 +534,22 @@ function slotCard(sl, A) {
   return `
     <section class="slot ${doneBoth ? 'done' : ''}">
       <div class="slotHead">
-        <div class="slotLabel">${esc(sl.label)}</div>
+        <div class="slotLabel">${esc(slotLabel(sl))}</div>
         <div class="row" style="margin-bottom:8px">
           <select class="grow" data-act="swap" data-slot="${sl.id}" style="margin-bottom:0">
             ${sl.options.map(o => `<option value="${esc(o)}" ${o === exId ? 'selected' : ''}>${esc(exName(o))}</option>`).join('')}
           </select>
-          <a class="vid" target="_blank" rel="noopener" aria-label="How to do ${esc(exName(exId))}"
+          <a class="vid" target="_blank" rel="noopener" aria-label="${tr('train.howTo', { name: esc(exName(exId)) })}"
             href="https://www.youtube.com/results?search_query=${encodeURIComponent(exName(exId) + ' form technique')}">&#9654;</a>
         </div>
         <div class="hint">
           ${p && p.top
-            ? `<span>last <b>${trim(p.top.weight)}${U()}&times;${p.top.reps}</b>${p.back ? ` &middot; ${trim(p.back.weight)}&times;${p.back.reps}` : ''}</span>`
-            : `<span class="muted">no history yet</span>`}
-          ${tg ? `<span class="tgt">target <b>${trim(tg.weight)}${U()}</b>${tg.up ? ' ▲' : ''}</span>` : ''}
-          ${best ? `<span class="muted">best ${trim(best)}${U()}</span>` : ''}
+            ? `<span>${tr('train.lastSet')} <b>${trim(p.top.weight)}${U()}&times;${p.top.reps}</b>${p.back ? ` &middot; ${trim(p.back.weight)}&times;${p.back.reps}` : ''}</span>`
+            : `<span class="muted">${tr('train.noHistory')}</span>`}
+          ${tg ? `<span class="tgt">${tr('train.target')} <b>${trim(tg.weight)}${U()}</b>${tg.up ? ' ▲' : ''}</span>` : ''}
+          ${best ? `<span class="muted">${tr('train.best')} ${trim(best)}${U()}</span>` : ''}
         </div>
-        ${sl.cue ? `<div class="cue">${esc(sl.cue)}</div>` : ''}
+        ${sl.cue ? `<div class="cue">${esc(cueText(sl))}</div>` : ''}
       </div>
       ${rows}
     </section>`;
@@ -524,7 +564,7 @@ function setRow(sl, exId, kind, A, tg) {
   const straight2 = sl.mode !== 'topback';
   const range = (kind === 'top' || straight2) ? sl.top : sl.back;
   const rp = kind === 'back' ? (sl.style === 'restpause' ? ' RP' : sl.style === 'lengthened' ? ' LP' : '') : '';
-  const label = straight2 ? (kind === 'top' ? 'SET 1' : 'SET 2') : (kind === 'top' ? 'TOP' : 'BACK');
+  const label = straight2 ? tr(kind === 'top' ? 'train.set1' : 'train.set2') : tr(kind === 'top' ? 'train.top' : 'train.back');
 
   // prefill: logged value > local draft > progression target (set 2 mirrors set 1 in straight mode)
   const backGuess = tg ? (straight2 ? tg.weight : Math.round(tg.weight * 0.8 / sl.inc) * sl.inc) : '';
@@ -539,10 +579,10 @@ function setRow(sl, exId, kind, A, tg) {
         <i>${range[0]}–${range[1]}${rp}</i>
       </div>
       ${stepper('weight', sl.id, kind, w, sl.inc, U())}
-      ${stepper('reps', sl.id, kind, r, 1, 'reps')}
+      ${stepper('reps', sl.id, kind, r, 1, tr('train.reps'))}
       ${stepper('rpe', sl.id, kind, rir, 0.5, 'RIR')}
       <button class="ok ${done ? 'on' : ''}" data-act="log" data-slot="${sl.id}" data-kind="${kind}"
-        aria-label="${done ? 'Undo set' : 'Log set'}"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+        aria-label="${tr(done ? 'train.undoSet' : 'train.logSet')}"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
           <path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6"
             stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     </div>`;
@@ -552,10 +592,10 @@ function stepper(field, slotId, kind, val, step, tag) {
   const id = `f-${slotId}-${kind}-${field}`;
   return `<div>
     <div class="stp">
-      <button data-act="step" data-for="${id}" data-step="${-step}" aria-label="less">&minus;</button>
+      <button data-act="step" data-for="${id}" data-step="${-step}" aria-label="${tr('train.less')}">&minus;</button>
       <input id="${id}" inputmode="decimal" data-field="${field}" data-slot="${slotId}" data-kind="${kind}"
         value="${val === '' || val === undefined ? '' : trim(val)}" placeholder="–">
-      <button data-act="step" data-for="${id}" data-step="${step}" aria-label="more">&#43;</button>
+      <button data-act="step" data-for="${id}" data-step="${step}" aria-label="${tr('train.more')}">&#43;</button>
     </div>
     <span class="unitTag">${tag}</span>
   </div>`;
@@ -564,7 +604,7 @@ function stepper(field, slotId, kind, val, step, tag) {
 /* ----------------------------------------------------------------- history  */
 
 function history() {
-  if (!S.logs.length) return `<h2>History</h2><div class="card muted small">Nothing logged yet.</div>`;
+  if (!S.logs.length) return `<h2>${tr('history.title')}</h2><div class="card muted small">${tr('history.empty')}</div>`;
 
   const weeks = {};
   S.logs.forEach(l => {
@@ -576,12 +616,12 @@ function history() {
   const avg = perWeek.length ? (S.logs.length / perWeek.length) : 0;
 
   return `
-    <h2>History</h2>
+    <h2>${tr('history.title')}</h2>
     <div class="card">
       <div class="stat">
-        <div><b>${S.logs.length}</b><span>sessions</span></div>
-        <div><b>${avg.toFixed(1)}</b><span>per week</span></div>
-        <div><b>${Math.round(S.logs.reduce((a, l) => a + l.sets.reduce((x, s) => x + s.weight * s.reps, 0), 0) / 1000)}t</b><span>total volume</span></div>
+        <div><b>${S.logs.length}</b><span>${tr('history.sessions')}</span></div>
+        <div><b>${avg.toFixed(1)}</b><span>${tr('history.perWeek')}</span></div>
+        <div><b>${Math.round(S.logs.reduce((a, l) => a + l.sets.reduce((x, s) => x + s.weight * s.reps, 0), 0) / 1000)}t</b><span>${tr('history.totalVolume')}</span></div>
       </div>
     </div>
     ${S.logs.slice().reverse().map(logCard).join('')}`;
@@ -593,9 +633,9 @@ function logCard(l) {
   return `
     <details class="log">
       <summary>
-        <span><b>${esc(S.program[l.day] ? S.program[l.day].name : 'Day ' + l.day)}</b>
-          <div class="meta">${niceDate(l.start)} &middot; ${dur} &middot; ${vol.toLocaleString()} ${U()}</div></span>
-        <span class="meta">${l.sets.length} sets</span>
+        <span><b>${esc(programName(l.day, tr('program.day', { day: l.day })))}</b>
+          <div class="meta">${niceDate(l.start)} &middot; ${dur} &middot; ${vol.toLocaleString(L() === 'uk' ? 'uk-UA' : undefined)} ${U()}</div></span>
+        <span class="meta">${tr('history.sets', { count: l.sets.length })}</span>
       </summary>
       <div class="body">
         ${l.sets.map(s => `
@@ -605,7 +645,7 @@ function logCard(l) {
               <span class="muted tiny">e1RM ${Math.round(e1rm(s.weight, s.reps))}</span></span>
           </div>`).join('')}
         ${l.notes ? `<div class="small muted" style="margin-top:10px">“${esc(l.notes)}”</div>` : ''}
-        <button class="ghost danger" style="margin-top:10px" data-act="delLog" data-id="${esc(l.id)}">Delete session</button>
+        <button class="ghost danger" style="margin-top:10px" data-act="delLog" data-id="${esc(l.id)}">${tr('history.delete')}</button>
       </div>
     </details>`;
 }
@@ -620,39 +660,39 @@ function body() {
   const wkAvg = wk.length ? wk.reduce((a, b) => a + b.kg, 0) / wk.length : null;
 
   return `
-    <h2>Profile</h2>
+    <h2>${tr('body.profile')}</h2>
     <div class="card">
       <div class="stat">
-        <div><b>${trim(S.profile.heightCm)}</b><span>height cm</span></div>
-        <div><b>${trim(S.profile.massKg)}</b><span>baseline kg</span></div>
-        <div><b>${calculateBmi(S.profile.heightCm, S.profile.massKg).toFixed(1)}</b><span>BMI</span></div>
-        <div><b>${trim(S.profile.bench1Rm)}</b><span>bench 1RM kg</span></div>
+        <div><b>${trim(S.profile.heightCm)}</b><span>${tr('body.height')}</span></div>
+        <div><b>${trim(S.profile.massKg)}</b><span>${tr('body.baseline')}</span></div>
+        <div><b>${calculateBmi(S.profile.heightCm, S.profile.massKg).toFixed(1)}</b><span>${tr('bmi')}</span></div>
+        <div><b>${trim(S.profile.bench1Rm)}</b><span>${tr('body.bench')}</span></div>
       </div>
-      <div class="tiny muted" style="margin-top:10px">BMI is a simple height-to-mass ratio, not a diagnosis or body-fat measurement.</div>
+      <div class="tiny muted" style="margin-top:10px">${tr('body.bmiHelp')}</div>
     </div>
-    <h2>Bodyweight</h2>
+    <h2>${tr('body.title')}</h2>
     <div class="card">
       <div class="row" style="gap:8px">
-        <input id="bwIn" inputmode="decimal" placeholder="e.g. 82.4" value="${latest && latest.d === dayKey(Date.now()) ? trim(latest.kg) : ''}">
-        <button class="primary" data-act="bwSave">Save</button>
+        <input id="bwIn" inputmode="decimal" placeholder="${tr('body.example')}" value="${latest && latest.d === dayKey(Date.now()) ? trim(latest.kg) : ''}">
+        <button class="primary" data-act="bwSave">${tr('body.save')}</button>
       </div>
-      <div class="tiny muted" style="margin-top:6px">Saved against today’s date (${dayKey(Date.now())}). Saving twice overwrites.</div>
+      <div class="tiny muted" style="margin-top:6px">${tr('body.savedToday', { date: dayKey(Date.now()) })}</div>
     </div>
     ${list.length ? `
       <div class="card">
         <div class="stat">
-          <div><b>${trim(latest.kg)}</b><span>latest ${U()}</span></div>
-          ${wkAvg !== null ? `<div><b>${wkAvg.toFixed(1)}</b><span>7-day avg</span></div>` : ''}
-          ${first && list.length > 1 ? `<div><b>${(latest.kg - first.kg >= 0 ? '+' : '')}${trim(latest.kg - first.kg)}</b><span>all time</span></div>` : ''}
+          <div><b>${trim(latest.kg)}</b><span>${tr('body.latest', { unit: U() })}</span></div>
+          ${wkAvg !== null ? `<div><b>${wkAvg.toFixed(1)}</b><span>${tr('body.average')}</span></div>` : ''}
+          ${first && list.length > 1 ? `<div><b>${(latest.kg - first.kg >= 0 ? '+' : '')}${trim(latest.kg - first.kg)}</b><span>${tr('body.allTime')}</span></div>` : ''}
         </div>
       </div>
       ${list.length > 1 ? `<div class="card">${spark(list.slice().reverse())}</div>` : ''}
-      <h2>Entries</h2>
+      <h2>${tr('body.entries')}</h2>
       <div class="card">
         ${list.map(b => `<div class="bwRow"><span>${esc(b.d)}</span>
           <span><b>${trim(b.kg)}</b> <span class="muted">${U()}</span>
-          <button class="icon" data-act="bwDel" data-d="${esc(b.d)}" aria-label="delete">✕</button></span></div>`).join('')}
-      </div>` : `<div class="card muted small">No weigh-ins yet. Same time of day, after waking, is the most consistent.</div>`}`;
+          <button class="icon" data-act="bwDel" data-d="${esc(b.d)}" aria-label="${tr('body.delete')}">✕</button></span></div>`).join('')}
+      </div>` : `<div class="card muted small">${tr('body.empty')}</div>`}`;
 }
 
 function spark(pts) {
@@ -664,7 +704,7 @@ function spark(pts) {
   const line = pts.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p.kg).toFixed(1)}`).join(' ');
   const area = `${line} L${x(pts.length - 1).toFixed(1)},${H - pad} L${pad},${H - pad} Z`;
   return `
-    <svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Bodyweight trend">
+    <svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${tr('body.trend')}">
       <path d="${area}" fill="rgba(245,158,11,.14)"></path>
       <path d="${line}" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path>
       ${pts.map((p, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(p.kg).toFixed(1)}" r="2.2" fill="#f59e0b"></circle>`).join('')}
@@ -676,81 +716,80 @@ function spark(pts) {
 
 function program() {
   return `
-    <h2>Program</h2>
+    <h2>${tr('program.title')}</h2>
     <div class="card small muted">
-      Two full-body days, each slot holding the variations you rotate between.
-      Change the pick mid-session on the Train tab — history follows the exercise, so progression stays honest.
+      ${tr('program.intro')}
     </div>
     ${['A', 'B'].map(d => `
-      <h2>Day ${d}</h2>
+      <h2>${tr('program.day', { day: d })}</h2>
       <div class="card">
-        <label class="fld"><span>Day name</span>
-          <input data-act="dayName" data-day="${d}" value="${esc(S.program[d].name)}"></label>
+        <label class="fld"><span>${tr('program.dayName')}</span>
+          <input data-act="dayName" data-day="${d}" value="${esc(programName(d))}"></label>
       </div>
       ${S.program[d].slots.map((sl, i) => slotEditor(d, sl, i)).join('')}
-      <button class="ghost" style="width:100%" data-act="addSlot" data-day="${d}">+ Add exercise slot</button>
+      <button class="ghost" style="width:100%" data-act="addSlot" data-day="${d}">${tr('program.addSlot')}</button>
     `).join('')}
-    <h2>Reset</h2>
+    <h2>${tr('program.reset')}</h2>
     <div class="card">
-      <button class="ghost danger" data-act="resetProgram">Restore default program</button>
-      <div class="tiny muted" style="margin-top:6px">Your logged sessions and bodyweight are kept.</div>
+      <button class="ghost danger" data-act="resetProgram">${tr('program.restore')}</button>
+      <div class="tiny muted" style="margin-top:6px">${tr('program.resetHelp')}</div>
     </div>`;
 }
 
 function slotEditor(d, sl, i) {
   const others = Object.values(S.exercises).filter(e => !sl.options.includes(e.id))
-    .sort((a, b) => a.name < b.name ? -1 : 1);
+    .sort((a, b) => exName(a.id).localeCompare(exName(b.id), L() === 'uk' ? 'uk-UA' : 'en'));
   return `
     <div class="card">
       <div class="row spread">
-        <input data-act="slotLabel" data-day="${d}" data-slot="${sl.id}" value="${esc(sl.label)}" style="font-weight:600">
+        <input data-act="slotLabel" data-day="${d}" data-slot="${sl.id}" value="${esc(slotLabel(sl))}" style="font-weight:600">
         <div class="row" style="gap:2px">
-          <button class="icon" data-act="moveSlot" data-day="${d}" data-slot="${sl.id}" data-dir="-1" aria-label="up">↑</button>
-          <button class="icon" data-act="moveSlot" data-day="${d}" data-slot="${sl.id}" data-dir="1" aria-label="down">↓</button>
-          <button class="icon danger" data-act="delSlot" data-day="${d}" data-slot="${sl.id}" aria-label="remove">✕</button>
+          <button class="icon" data-act="moveSlot" data-day="${d}" data-slot="${sl.id}" data-dir="-1" aria-label="${tr('program.up')}">↑</button>
+          <button class="icon" data-act="moveSlot" data-day="${d}" data-slot="${sl.id}" data-dir="1" aria-label="${tr('program.down')}">↓</button>
+          <button class="icon danger" data-act="delSlot" data-day="${d}" data-slot="${sl.id}" aria-label="${tr('program.remove')}">✕</button>
         </div>
       </div>
 
-      <div class="tiny muted" style="margin:10px 0 0">Variations — tap to make it the default pick</div>
+      <div class="tiny muted" style="margin:10px 0 0">${tr('program.variations')}</div>
       <div class="chips">
         ${sl.options.map(o => `
           <span class="chip ${o === sl.pick ? 'sel' : ''}">
             <span data-act="setPick" data-day="${d}" data-slot="${sl.id}" data-ex="${esc(o)}">${esc(exName(o))}</span>
-            ${sl.options.length > 1 ? `<button data-act="delOpt" data-day="${d}" data-slot="${sl.id}" data-ex="${esc(o)}" aria-label="remove">✕</button>` : ''}
+            ${sl.options.length > 1 ? `<button data-act="delOpt" data-day="${d}" data-slot="${sl.id}" data-ex="${esc(o)}" aria-label="${tr('program.remove')}">✕</button>` : ''}
           </span>`).join('')}
       </div>
       <select data-act="addOpt" data-day="${d}" data-slot="${sl.id}">
-        <option value="">+ add a variation…</option>
-        ${others.map(e => `<option value="${esc(e.id)}">${esc(e.name)}</option>`).join('')}
-        <option value="__new">＋ new exercise…</option>
+        <option value="">${tr('program.addVariation')}</option>
+        ${others.map(e => `<option value="${esc(e.id)}">${esc(exName(e.id))}</option>`).join('')}
+        <option value="__new">${tr('program.newExercise')}</option>
       </select>
 
       <div class="grid2" style="margin-top:10px">
-        <label class="fld"><span>Structure</span>
+        <label class="fld"><span>${tr('program.structure')}</span>
           <select data-act="mode" data-day="${d}" data-slot="${sl.id}">
-            <option value="straight2" ${sl.mode !== 'topback' ? 'selected' : ''}>2 straight sets</option>
-            <option value="topback" ${sl.mode === 'topback' ? 'selected' : ''}>Top + back-off</option>
+            <option value="straight2" ${sl.mode !== 'topback' ? 'selected' : ''}>${tr('program.straight2')}</option>
+            <option value="topback" ${sl.mode === 'topback' ? 'selected' : ''}>${tr('program.topBack')}</option>
           </select></label>
-        <label class="fld"><span>Set 2 technique</span>
+        <label class="fld"><span>${tr('program.set2Technique')}</span>
           <select data-act="style" data-day="${d}" data-slot="${sl.id}">
-            <option value="straight" ${sl.style === 'straight' ? 'selected' : ''}>Straight set</option>
-            <option value="restpause" ${sl.style === 'restpause' ? 'selected' : ''}>Rest-pause</option>
-            <option value="lengthened" ${sl.style === 'lengthened' ? 'selected' : ''}>Lengthened partials</option>
+            <option value="straight" ${sl.style === 'straight' ? 'selected' : ''}>${tr('program.straight')}</option>
+            <option value="restpause" ${sl.style === 'restpause' ? 'selected' : ''}>${tr('program.restPause')}</option>
+            <option value="lengthened" ${sl.style === 'lengthened' ? 'selected' : ''}>${tr('program.lengthened')}</option>
           </select></label>
       </div>
       <div class="grid4">
-        <label class="fld"><span>Reps min</span><input inputmode="numeric" data-act="rng" data-day="${d}" data-slot="${sl.id}" data-k="top" data-j="0" value="${sl.top[0]}"></label>
-        <label class="fld"><span>Reps max</span><input inputmode="numeric" data-act="rng" data-day="${d}" data-slot="${sl.id}" data-k="top" data-j="1" value="${sl.top[1]}"></label>
+        <label class="fld"><span>${tr('program.repsMin')}</span><input inputmode="numeric" data-act="rng" data-day="${d}" data-slot="${sl.id}" data-k="top" data-j="0" value="${sl.top[0]}"></label>
+        <label class="fld"><span>${tr('program.repsMax')}</span><input inputmode="numeric" data-act="rng" data-day="${d}" data-slot="${sl.id}" data-k="top" data-j="1" value="${sl.top[1]}"></label>
         ${sl.mode === 'topback' ? `
-        <label class="fld"><span>Back min</span><input inputmode="numeric" data-act="rng" data-day="${d}" data-slot="${sl.id}" data-k="back" data-j="0" value="${sl.back[0]}"></label>
-        <label class="fld"><span>Back max</span><input inputmode="numeric" data-act="rng" data-day="${d}" data-slot="${sl.id}" data-k="back" data-j="1" value="${sl.back[1]}"></label>` : `
-        <label class="fld"><span>Increment (${U()})</span>
+        <label class="fld"><span>${tr('program.backMin')}</span><input inputmode="numeric" data-act="rng" data-day="${d}" data-slot="${sl.id}" data-k="back" data-j="0" value="${sl.back[0]}"></label>
+        <label class="fld"><span>${tr('program.backMax')}</span><input inputmode="numeric" data-act="rng" data-day="${d}" data-slot="${sl.id}" data-k="back" data-j="1" value="${sl.back[1]}"></label>` : `
+        <label class="fld"><span>${tr('program.increment', { unit: U() })}</span>
           <input inputmode="decimal" data-act="inc" data-day="${d}" data-slot="${sl.id}" value="${sl.inc}"></label>`}
       </div>
-      ${sl.mode === 'topback' ? `<label class="fld"><span>Increment (${U()})</span>
+      ${sl.mode === 'topback' ? `<label class="fld"><span>${tr('program.increment', { unit: U() })}</span>
         <input inputmode="decimal" data-act="inc" data-day="${d}" data-slot="${sl.id}" value="${sl.inc}"></label>` : ''}
-      <label class="fld"><span>Form cue (shown while training)</span>
-        <input data-act="cue" data-day="${d}" data-slot="${sl.id}" value="${esc(sl.cue || '')}"></label>
+      <label class="fld"><span>${tr('program.cue')}</span>
+        <input data-act="cue" data-day="${d}" data-slot="${sl.id}" value="${esc(cueText(sl) || '')}"></label>
     </div>`;
 }
 
@@ -759,74 +798,80 @@ function slotEditor(d, sl, i) {
 function data() {
   const bytes = new Blob([JSON.stringify(S)]).size;
   return `
-    <h2>Profile &amp; starter weights</h2>
+    <h2>${tr('language')}</h2>
     <div class="card">
-      <div class="grid2">
-        <label class="fld"><span>Height (cm)</span>
-          <input id="profileHeight" inputmode="decimal" value="${trim(S.profile.heightCm)}"></label>
-        <label class="fld"><span>Body mass (kg)</span>
-          <input id="profileMass" inputmode="decimal" value="${trim(S.profile.massKg)}"></label>
-      </div>
-      <label class="fld"><span>Bench press estimated 1RM (kg)</span>
-        <input id="profileBench" inputmode="decimal" value="${trim(S.profile.bench1Rm)}"></label>
-      <div class="row spread small" style="margin:2px 0 12px">
-        <span class="muted">Current BMI</span><b>${calculateBmi(S.profile.heightCm, S.profile.massKg).toFixed(1)}</b>
-      </div>
-      <button class="primary" style="width:100%" data-act="saveProfile" data-source="profile">Update profile &amp; starter weights</button>
-      <div class="tiny muted" style="margin-top:8px">This rescales only starter suggestions. Logged training and progression history stay unchanged.</div>
+      <label class="fld"><span>${tr('language')}</span>
+        <select data-act="language">
+          <option value="en" ${L() === 'en' ? 'selected' : ''}>${tr('language.en')}</option>
+          <option value="uk" ${L() === 'uk' ? 'selected' : ''}>${tr('language.uk')}</option>
+        </select></label>
     </div>
 
-    <h2>Settings</h2>
+    <h2>${tr('data.profileTitle')}</h2>
     <div class="card">
       <div class="grid2">
-        <label class="fld"><span>Unit label</span>
+        <label class="fld"><span>${tr('setup.height')}</span>
+          <input id="profileHeight" inputmode="decimal" value="${trim(S.profile.heightCm)}"></label>
+        <label class="fld"><span>${tr('setup.mass')}</span>
+          <input id="profileMass" inputmode="decimal" value="${trim(S.profile.massKg)}"></label>
+      </div>
+      <label class="fld"><span>${tr('setup.bench')}</span>
+        <input id="profileBench" inputmode="decimal" value="${trim(S.profile.bench1Rm)}"></label>
+      <div class="row spread small" style="margin:2px 0 12px">
+        <span class="muted">${tr('data.currentBmi')}</span><b>${calculateBmi(S.profile.heightCm, S.profile.massKg).toFixed(1)}</b>
+      </div>
+      <button class="primary" style="width:100%" data-act="saveProfile" data-source="profile">${tr('data.updateProfile')}</button>
+      <div class="tiny muted" style="margin-top:8px">${tr('data.profileHelp')}</div>
+    </div>
+
+    <h2>${tr('data.settings')}</h2>
+    <div class="card">
+      <div class="grid2">
+        <label class="fld"><span>${tr('data.unit')}</span>
           <select data-act="set" data-k="unit">
             <option value="kg" ${U() === 'kg' ? 'selected' : ''}>kg</option>
             <option value="lb" ${U() === 'lb' ? 'selected' : ''}>lb</option>
           </select></label>
-        <label class="fld"><span>Session target (min)</span>
+        <label class="fld"><span>${tr('data.sessionTarget')}</span>
           <input inputmode="numeric" data-act="set" data-k="targetMin" value="${S.settings.targetMin}"></label>
-        <label class="fld"><span>Rest — compound (s)</span>
+        <label class="fld"><span>${tr('data.restCompound')}</span>
           <input inputmode="numeric" data-act="set" data-k="restC" value="${S.settings.restC}"></label>
-        <label class="fld"><span>Rest — isolation (s)</span>
+        <label class="fld"><span>${tr('data.restIsolation')}</span>
           <input inputmode="numeric" data-act="set" data-k="restI" value="${S.settings.restI}"></label>
-        <label class="fld"><span>Default reps</span>
+        <label class="fld"><span>${tr('data.defaultReps')}</span>
           <input inputmode="numeric" data-act="set" data-k="defReps" value="${S.settings.defReps}"></label>
-        <label class="fld"><span>Default reps in reserve</span>
+        <label class="fld"><span>${tr('data.defaultRir')}</span>
           <input inputmode="decimal" data-act="set" data-k="defRir" value="${S.settings.defRir}"></label>
       </div>
       <label class="row" style="gap:10px">
         <input type="checkbox" data-act="beep" ${S.settings.beep ? 'checked' : ''} style="width:24px;min-height:24px">
-        <span class="small">Beep when the rest timer ends</span>
+        <span class="small">${tr('data.beep')}</span>
       </label>
-      <div class="tiny muted" style="margin-top:8px">Switching unit relabels the app; it does not convert weights you already logged.</div>
+      <div class="tiny muted" style="margin-top:8px">${tr('data.unitHelp')}</div>
     </div>
 
-    <h2>Backup</h2>
+    <h2>${tr('data.backup')}</h2>
     <div class="card">
       <div class="small muted" style="margin-bottom:10px">
-        Data stays on this device — ${S.logs.length} sessions, ${S.bw.length} weigh-ins, ${(bytes / 1024).toFixed(1)} KB,
-        kept in two copies (localStorage + an IndexedDB mirror) so an evicted cache self-heals.
-        Still: export now and then — a file you hold is the only backup that survives losing the phone.
+        ${tr('data.backupHelp', { sessions: S.logs.length, weighIns: S.bw.length, size: (bytes / 1024).toFixed(1) })}
       </div>
-      <button class="primary" style="width:100%" data-act="export">Download backup (.json)</button>
-      <button class="ghost" style="width:100%;margin-top:8px" data-act="copy">Copy backup to clipboard</button>
-      <label class="fld" style="margin-top:14px"><span>Restore from a backup file</span>
+      <button class="primary" style="width:100%" data-act="export">${tr('data.download')}</button>
+      <button class="ghost" style="width:100%;margin-top:8px" data-act="copy">${tr('data.copy')}</button>
+      <label class="fld" style="margin-top:14px"><span>${tr('data.restoreFile')}</span>
         <input type="file" accept="application/json,.json" data-act="importFile"></label>
-      <label class="fld"><span>…or paste backup JSON</span>
+      <label class="fld"><span>${tr('data.restorePaste')}</span>
         <textarea rows="3" id="pasteIn" placeholder='{"v":1,…}'></textarea></label>
-      <button class="ghost" style="width:100%" data-act="importPaste">Restore from pasted JSON</button>
+      <button class="ghost" style="width:100%" data-act="importPaste">${tr('data.restore')}</button>
     </div>
 
-    <h2>Danger zone</h2>
+    <h2>${tr('data.danger')}</h2>
     <div class="card">
-      <button class="ghost danger" style="width:100%" data-act="wipe">Erase all data</button>
+      <button class="ghost danger" style="width:100%" data-act="wipe">${tr('data.erase')}</button>
     </div>
 
-    <h2>Install on iPhone</h2>
+    <h2>${tr('data.install')}</h2>
     <div class="card small muted">
-      Safari → Share → <b>Add to Home Screen</b>. It then opens full-screen, works offline in the gym,
-      and its saved data is far more durable than a plain browser tab.
+      ${tr('data.installHelp')}
     </div>`;
 }
 
@@ -841,14 +886,14 @@ function startSession(day) {
 function finishSession() {
   const A = S.active;
   if (!A) return;
-  if (!A.sets.length) { toast('No sets logged'); return; }
+  if (!A.sets.length) { toast(tr('msg.noSets')); return; }
   const end = Date.now();
   const dur = end - A.start - A.pausedMs - (A.pausedAt ? end - A.pausedAt : 0);
   S.logs.push({ id: 'L' + A.start, day: A.day, start: A.start, end, dur, sets: A.sets, notes: A.notes || '' });
   S.active = null;
   S.ui.tab = 'history';
   save(); render();
-  toast('Session saved');
+  toast(tr('msg.sessionSaved'));
 }
 
 function toggleLog(slotId, kind) {
@@ -867,8 +912,8 @@ function toggleLog(slotId, kind) {
   }
   const get = f => num(($(`#f-${slotId}-${kind}-${f}`) || {}).value);
   const weight = get('weight'), reps = get('reps'), rpe = get('rpe');
-  if (!reps) { toast('Enter reps first'); return; }
-  if (!weight && !confirm('No weight entered — log this set at bodyweight (0)?')) return;
+  if (!reps) { toast(tr('msg.enterReps')); return; }
+  if (!weight && !confirm(tr('confirm.bodyweightSet'))) return;
   const exId = A.picks[slotId] || sl.pick;
   A.sets.push({ slotId, exId, kind, weight, reps, rpe, ts: Date.now() });
   A.restEnd = Date.now() + restFor(sl, kind, exId) * 1000;
@@ -902,12 +947,12 @@ function sanitizeBackup(p) {
 
 function restore(text) {
   let p;
-  try { p = JSON.parse(text); } catch (e) { toast('That is not valid JSON'); return; }
+  try { p = JSON.parse(text); } catch (e) { toast(tr('msg.invalidJson')); return; }
   const clean = sanitizeBackup(p);
-  if (!clean) { toast('Not a Pump Log backup'); return; }
-  if (!confirm(`Restore ${clean.logs.length} sessions and ${clean.bw.length} weigh-ins? This replaces what is on this device.`)) return;
+  if (!clean) { toast(tr('msg.notBackup')); return; }
+  if (!confirm(tr('confirm.restore', { sessions: clean.logs.length, weighIns: clean.bw.length }))) return;
   localStorage.setItem(KEY, JSON.stringify(clean));
-  S = load(); flushSave(); render(); toast('Backup restored');
+  S = load(); flushSave(); render(); toast(tr('msg.backupRestored'));
 }
 
 const findSlot = (d, id) => S.program[d].slots.find(s => s.id === id);
@@ -925,9 +970,9 @@ function saveProfile(source) {
   const heightCm = num(($(`#${prefix}Height`) || {}).value);
   const massKg = num(($(`#${prefix}Mass`) || {}).value);
   const bench1Rm = num(($(`#${prefix}Bench`) || {}).value);
-  if (heightCm < 120 || heightCm > 230) { toast('Enter height between 120 and 230 cm'); return; }
-  if (massKg < 35 || massKg > 250) { toast('Enter body mass between 35 and 250 kg'); return; }
-  if (bench1Rm < 20 || bench1Rm > 300) { toast('Enter bench 1RM between 20 and 300 kg'); return; }
+  if (heightCm < 120 || heightCm > 230) { toast(tr('msg.heightRange')); return; }
+  if (massKg < 35 || massKg > 250) { toast(tr('msg.massRange')); return; }
+  if (bench1Rm < 20 || bench1Rm > 300) { toast(tr('msg.benchRange')); return; }
 
   const previousScale = S.profile ? S.profile.strengthScale : 1;
   const nextScale = strengthScale(bench1Rm);
@@ -941,7 +986,8 @@ function saveProfile(source) {
   const today = dayKey(now);
   S.bw = S.bw.filter(row => row.d !== today).concat({ d: today, kg: massKg });
   save(); render();
-  toast(source === 'setup' ? `Ready · BMI ${calculateBmi(heightCm, massKg).toFixed(1)}` : 'Profile updated');
+  setupDraft = {};
+  toast(source === 'setup' ? tr('msg.ready', { bmi: calculateBmi(heightCm, massKg).toFixed(1) }) : tr('msg.profileUpdated'));
 }
 
 /* ------------------------------------------------------------ event wiring */
@@ -969,13 +1015,13 @@ document.addEventListener('click', async e => {
     case 'stopSession':
       if (!S.active) break;
       if (S.active.sets.length) {
-        if (confirm('Finish and save this session?')) finishSession();
-      } else if (confirm('No sets logged — discard this session?')) {
+        if (confirm(tr('confirm.finish'))) finishSession();
+      } else if (confirm(tr('confirm.discardEmpty'))) {
         S.active = null; save(); render();
       }
       break;
     case 'abandon':
-      if (confirm('Discard this session? Logged sets will be lost.')) { S.active = null; save(); render(); }
+      if (confirm(tr('confirm.discard'))) { S.active = null; save(); render(); }
       break;
     case 'log': toggleLog(id, t.dataset.kind); break;
 
@@ -991,17 +1037,17 @@ document.addEventListener('click', async e => {
     }
 
     case 'delLog':
-      if (confirm('Delete this session permanently?')) {
+      if (confirm(tr('confirm.deleteSession'))) {
         S.logs = S.logs.filter(l => l.id !== t.dataset.id); save(); render();
       }
       break;
 
     case 'bwSave': {
       const v = num(($('#bwIn') || {}).value);
-      if (!v) { toast('Enter a weight'); break; }
+      if (!v) { toast(tr('msg.enterWeight')); break; }
       const d0 = dayKey(Date.now());
       S.bw = S.bw.filter(b => b.d !== d0).concat({ d: d0, kg: v });
-      save(); render(); toast('Bodyweight saved');
+      save(); render(); toast(tr('msg.bodyweightSaved'));
       break;
     }
     case 'bwDel': S.bw = S.bw.filter(b => b.d !== t.dataset.d); save(); render(); break;
@@ -1019,7 +1065,7 @@ document.addEventListener('click', async e => {
       break;
     }
     case 'delSlot':
-      if (confirm('Remove this slot from the program?')) {
+      if (confirm(tr('confirm.removeSlot'))) {
         S.program[d].slots = S.program[d].slots.filter(s => s.id !== id); save(); render();
       }
       break;
@@ -1029,7 +1075,7 @@ document.addEventListener('click', async e => {
       save(); render(); break;
     }
     case 'resetProgram':
-      if (confirm('Restore the default two-day program? Your logs are kept.')) {
+      if (confirm(tr('confirm.resetProgram'))) {
         S.program = seedProgram();
         rescaleStarterWeights(1, S.profile ? S.profile.strengthScale : 1);
         save(); render();
@@ -1039,17 +1085,16 @@ document.addEventListener('click', async e => {
     case 'export': exportData(); break;
     case 'copy':
       navigator.clipboard.writeText(JSON.stringify(S, null, 2))
-        .then(() => toast('Backup copied')).catch(() => toast('Clipboard blocked — use download'));
+        .then(() => toast(tr('msg.backupCopied'))).catch(() => toast(tr('msg.clipboardBlocked')));
       break;
     case 'importPaste': restore(($('#pasteIn') || {}).value || ''); break;
     case 'wipe':
-      if (confirm('Erase every session, weigh-in and program change on this device?') &&
-          confirm('Really erase? This cannot be undone.')) {
+      if (confirm(tr('confirm.erase')) && confirm(tr('confirm.eraseReally'))) {
         await idbClear();
         localStorage.removeItem(KEY);
         S = seed();
         flushSave();
-        render(); toast('All data erased');
+        render(); toast(tr('msg.allErased'));
       }
       break;
   }
@@ -1058,6 +1103,10 @@ document.addEventListener('click', async e => {
 /* keep drafts + settings in sync without re-rendering (would steal focus) */
 document.addEventListener('input', e => {
   const t = e.target;
+
+  if (t.id === 'setupHeight') setupDraft.height = t.value;
+  if (t.id === 'setupMass') setupDraft.mass = t.value;
+  if (t.id === 'setupBench') setupDraft.bench = t.value;
 
   if (t.dataset.field && S.active) {
     const k = dkey(t.dataset.slot, t.dataset.kind);
@@ -1094,9 +1143,14 @@ document.addEventListener('input', e => {
 document.addEventListener('change', e => {
   const t = e.target, a = t.dataset.act, d = t.dataset.day, id = t.dataset.slot;
 
+  if (a === 'language') {
+    S.settings.language = normalizeLanguage(t.value);
+    save(); render(); return;
+  }
+
   if (a === 'swap' && S.active) {
     if (S.active.sets.some(set => set.slotId === t.dataset.slot)) {
-      toast('Undo this slot’s logged sets before swapping exercise');
+      toast(tr('msg.undoBeforeSwap'));
       render(); return;
     }
     S.active.picks[t.dataset.slot] = t.value;
@@ -1113,10 +1167,10 @@ document.addEventListener('change', e => {
     let v = t.value;
     if (!v) return;
     if (v === '__new') {
-      const name = (prompt('Exercise name') || '').trim();
+      const name = (prompt(tr('prompt.exerciseName')) || '').trim();
       if (!name) { render(); return; }
       const nid = 'x' + Date.now().toString(36);
-      const heavy = confirm('Treat as a compound (longer rest)?  OK = compound, Cancel = isolation');
+      const heavy = confirm(tr('confirm.compound'));
       S.exercises[nid] = { id: nid, name, kind: heavy ? 'c' : 'i' };
       v = nid;
     }
@@ -1162,8 +1216,9 @@ function tick() {
   sess.classList.remove('hidden');
   sess.querySelector('.clock').classList.toggle('over', mins > S.settings.targetMin);
   $('#clockTime').textContent = mmss(elapsed / 1000);
-  $('#clockTarget').textContent = A.pausedAt ? 'paused' : `/ ${S.settings.targetMin}m`;
+  $('#clockTarget').textContent = A.pausedAt ? tr('paused') : `/ ${S.settings.targetMin}m`;
   $('#pauseBtn').innerHTML = A.pausedAt ? '&#9654;' : '&#9208;';
+  $('#pauseBtn').setAttribute('aria-label', tr(A.pausedAt ? 'resume' : 'pause'));
 
   if (A.pausedAt) { rest.classList.add('hidden'); return; }
 
@@ -1198,7 +1253,7 @@ render();
       if ((m.savedAt || 0) > (S.savedAt || 0)) {
         localStorage.setItem(KEY, mirror);
         S = load(); render();
-        toast('Recovered data from backup copy');
+        toast(tr('msg.recovered'));
       }
     } catch (e) { /* corrupt mirror — overwritten below */ }
   }
