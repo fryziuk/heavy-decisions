@@ -79,6 +79,14 @@ const EN = {
   'program.newSlot': 'New slot',
 
   'default.dayA': 'Full Body A', 'default.dayB': 'Full Body B',
+  'cue.legacy.latLengthen': 'let the lats lengthen before each pull',
+  'cue.legacy.deltStretch': 'start from a deep across-body stretch',
+  'cue.legacy.tricepsStretch': 'overhead = long head at full stretch',
+  'cue.legacy.fullHang': 'full hang between reps, lats loaded long',
+  'cue.legacy.machineFailure': 'machine stability lets you push closer to failure',
+  'cue.legacy.deepKnee': 'deep knee bend, slow eccentric',
+  'cue.legacy.curlStretch': 'incline puts the elbow behind you — full stretch',
+  'cue.legacy.calfStretch': 'hold the deep stretch 3–5s, skip the top half',
 };
 
 const UK = {
@@ -101,7 +109,7 @@ const UK = {
   'train.setsTotal': '{sets} підходів · {volume} {unit} загалом', 'train.inProgress': '{name} · триває',
   'train.notes': 'Нотатки тренування', 'train.notesPlaceholder': 'Сон, енергія, дискомфорт…', 'train.discard': 'Скасувати тренування',
   'train.lastSet': 'минулого разу', 'train.noHistory': 'історії ще немає', 'train.target': 'ціль', 'train.best': 'рекорд',
-  'train.set1': 'ПІДХІД 1', 'train.set2': 'ПІДХІД 2', 'train.top': 'ВАЖКИЙ', 'train.back': 'ПОЛЕГШЕНИЙ',
+  'train.set1': 'СЕТ 1', 'train.set2': 'СЕТ 2', 'train.top': 'ВАЖ.', 'train.back': 'ЛЕГ.',
   'train.reps': 'повт.', 'train.undoSet': 'Скасувати підхід', 'train.logSet': 'Записати підхід', 'train.less': 'менше', 'train.more': 'більше',
   'train.howTo': 'Як виконувати: {name}',
 
@@ -195,6 +203,14 @@ const UK = {
   'cue.b1': 'відводьте таз назад, відчуйте розтягнення задньої поверхні стегна', 'cue.b2': 'вага блока залежить від тренажера; повністю витягуйтеся між повторами',
   'cue.b3': 'вага залежить від тренажера; стабільна позиція й контрольовані повтори', 'cue.b4': 'контролюйте опускання й працюйте в глибокій стабільній амплітуді',
   'cue.b5': 'вага однієї гантелі; не рухайте плечем', 'cue.b6': 'тренажери різняться; пауза в глибокому розтягненні',
+  'cue.legacy.latLengthen': 'дайте найширшим розтягнутися перед кожною тягою',
+  'cue.legacy.deltStretch': 'починайте з глибокого розтягнення руки перед корпусом',
+  'cue.legacy.tricepsStretch': 'над головою — довга голівка в повному розтягненні',
+  'cue.legacy.fullHang': 'повністю витягуйтеся між повторами, навантажуйте найширші в розтягненні',
+  'cue.legacy.machineFailure': 'стабільність тренажера дозволяє працювати ближче до відмови',
+  'cue.legacy.deepKnee': 'глибоке згинання коліна, повільне опускання',
+  'cue.legacy.curlStretch': 'похила лава відводить лікоть назад — повне розтягнення',
+  'cue.legacy.calfStretch': 'утримуйте глибоке розтягнення 3–5 с, не акцентуйте верхню половину',
 };
 
 export function normalizeLanguage(language) {

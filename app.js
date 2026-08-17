@@ -372,12 +372,25 @@ const DEFAULT_CUES = {
   b5: 'weight is per dumbbell; keep shoulder still', b6: 'machine varies; pause in the deep stretch',
 };
 
+const LEGACY_CUE_KEYS = {
+  'let the lats lengthen before each pull': 'cue.legacy.latLengthen',
+  'start from a deep across-body stretch': 'cue.legacy.deltStretch',
+  'overhead = long head at full stretch': 'cue.legacy.tricepsStretch',
+  'full hang between reps, lats loaded long': 'cue.legacy.fullHang',
+  'machine stability lets you push closer to failure': 'cue.legacy.machineFailure',
+  'deep knee bend, slow eccentric': 'cue.legacy.deepKnee',
+  'incline puts the elbow behind you — full stretch': 'cue.legacy.curlStretch',
+  'hold the deep stretch 3–5s, skip the top half': 'cue.legacy.calfStretch',
+};
+
 const programName = (day, fallback) => {
   const value = S.program[day] ? S.program[day].name : fallback;
   return value === `Full Body ${day}` ? tr(`default.day${day}`) : value;
 };
 const slotLabel = sl => tr(`slot.${sl.label}`, {}, sl.label);
-const cueText = sl => DEFAULT_CUES[sl.id] === sl.cue ? tr(`cue.${sl.id}`, {}, sl.cue) : sl.cue;
+const cueText = sl => DEFAULT_CUES[sl.id] === sl.cue
+  ? tr(`cue.${sl.id}`, {}, sl.cue)
+  : LEGACY_CUE_KEYS[sl.cue] ? tr(LEGACY_CUE_KEYS[sl.cue], {}, sl.cue) : sl.cue;
 
 const num = parseDecimal;
 const trim = n => (Math.round(n * 100) / 100).toString();
