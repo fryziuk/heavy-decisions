@@ -3,6 +3,8 @@
 
 'use strict';
 
+import { bestTopWeight, lastPerformance, progressionTarget, updateRange } from './domain.js';
+
 const KEY = 'pumplog.v1';
 const PROGRAM_REV = 2;
 const $ = (s, r = document) => r.querySelector(s);
@@ -94,6 +96,80 @@ function seed() {
   };
 }
 
+function safeRange(value, fallback = [8, 12]) {
+  if (!Array.isArray(value) || value.length < 2) return fallback.slice();
+  return updateRange(updateRange(fallback, 0, value[0]), 1, value[1]);
+}
+
+const finiteNumber = value => value !== null && value !== '' && Number.isFinite(+value) ? +value : null;
+
+function sanitizeProgram(value) {
+  if (!value || typeof value !== 'object') return null;
+  const result = {};
+  for (const day of ['A', 'B']) {
+    const source = value[day];
+    if (!source || !Array.isArray(source.slots)) return null;
+    result[day] = {
+      name: typeof source.name === 'string' ? source.name : `Full Body ${day}`,
+      slots: source.slots.filter(sl => sl && typeof sl === 'object').map((sl, index) => {
+        const rawOptions = Array.isArray(sl.options) ? sl.options.map(String).filter(Boolean) : [];
+        const pick = String(sl.pick || rawOptions[0] || 'leg-press');
+        const options = [...new Set([pick, ...rawOptions])];
+        const clean = {
+          id: String(sl.id || `${day.toLowerCase()}-${index}`),
+          label: typeof sl.label === 'string' ? sl.label : 'Exercise',
+          pick, options,
+          top: safeRange(sl.top), back: safeRange(sl.back),
+          style: ['straight', 'restpause', 'lengthened'].includes(sl.style) ? sl.style : 'straight',
+          inc: Number.isFinite(+sl.inc) && +sl.inc > 0 ? +sl.inc : 1,
+          cue: typeof sl.cue === 'string' ? sl.cue : '',
+          mode: sl.mode === 'topback' ? 'topback' : 'straight2',
+        };
+        if (typeof sl.startExId === 'string') clean.startExId = sl.startExId;
+        const startWeight = finiteNumber(sl.startWeight), startReps = finiteNumber(sl.startReps);
+        if (startWeight !== null) clean.startWeight = startWeight;
+        if (startReps !== null && startReps > 0) clean.startReps = startReps;
+        return clean;
+      }),
+    };
+  }
+  return result;
+}
+
+function sanitizeSets(value) {
+  return (Array.isArray(value) ? value : [])
+    .filter(set => set && typeof set === 'object')
+    .map(set => {
+      const clean = {
+        slotId: String(set.slotId || ''), exId: String(set.exId || ''),
+        kind: set.kind === 'back' ? 'back' : 'top',
+        weight: num(set.weight), reps: num(set.reps),
+      };
+      const rpe = finiteNumber(set.rpe), ts = finiteNumber(set.ts);
+      if (rpe !== null) clean.rpe = rpe;
+      if (ts !== null) clean.ts = ts;
+      return clean;
+    });
+}
+
+function sanitizeLogs(value) {
+  return (Array.isArray(value) ? value : [])
+    .filter(log => log && typeof log === 'object' && Number.isFinite(+log.start))
+    .map(log => ({
+      id: String(log.id || 'L' + log.start), day: log.day === 'B' ? 'B' : 'A',
+      start: +log.start, end: Number.isFinite(+log.end) ? +log.end : +log.start,
+      ...(Number.isFinite(+log.dur) ? { dur: +log.dur } : {}),
+      notes: typeof log.notes === 'string' ? log.notes : '',
+      sets: sanitizeSets(log.sets),
+    }));
+}
+
+function sanitizeBodyweight(value) {
+  return (Array.isArray(value) ? value : [])
+    .filter(row => row && /^\d{4}-\d{2}-\d{2}$/.test(row.d) && Number.isFinite(+row.kg))
+    .map(row => ({ d: row.d, kg: +row.kg }));
+}
+
 /* -------------------------------------------------------------------- state */
 
 let S = load();
@@ -113,8 +189,10 @@ function load() {
       delete p.settings.defRpe;
       // always open on Train — the start button should be the first thing you see
       p.ui = { tab: 'train' };
-      p.logs = p.logs || []; p.bw = p.bw || [];
+      p.logs = sanitizeLogs(p.logs);
+      p.bw = sanitizeBodyweight(p.bw);
       // keep the user's program; backfill fields added by newer app versions
+      p.program = sanitizeProgram(p.program);
       if (!p.program) p.program = base.program;
       else ['A', 'B'].forEach(d => (p.program[d] ? p.program[d].slots : []).forEach(sl => {
         if (sl.cue === undefined) {
@@ -148,7 +226,16 @@ function load() {
         p.savedAt = Date.now();
         localStorage.setItem(KEY, JSON.stringify(p));
       }
-      if (p.active) { p.active.pausedAt = p.active.pausedAt || 0; p.active.pausedMs = p.active.pausedMs || 0; }
+      if (p.active && typeof p.active === 'object' && ['A', 'B'].includes(p.active.day)) {
+        p.active.sets = sanitizeSets(p.active.sets);
+        p.active.draft = p.active.draft && typeof p.active.draft === 'object' ? p.active.draft : {};
+        p.active.picks = p.active.picks && typeof p.active.picks === 'object' ? p.active.picks : {};
+        p.active.notes = typeof p.active.notes === 'string' ? p.active.notes : '';
+        p.active.start = finiteNumber(p.active.start) || Date.now();
+        p.active.restEnd = finiteNumber(p.active.restEnd) || 0;
+        p.active.pausedAt = finiteNumber(p.active.pausedAt) || 0;
+        p.active.pausedMs = finiteNumber(p.active.pausedMs) || 0;
+      } else p.active = null;
       return p;
     }
   } catch (e) { console.warn('load failed, starting fresh', e); }
@@ -206,9 +293,16 @@ function idbGet() {
 }
 
 function idbClear() {
-  if (!IDB.db) return;
-  try { IDB.db.transaction('kv', 'readwrite').objectStore('kv').delete('state'); }
-  catch (e) { /* ignore */ }
+  return new Promise(resolve => {
+    if (!IDB.db) return resolve();
+    try {
+      const tx = IDB.db.transaction('kv', 'readwrite');
+      tx.objectStore('kv').delete('state');
+      tx.oncomplete = resolve;
+      tx.onerror = resolve;
+      tx.onabort = resolve;
+    } catch (e) { resolve(); }
+  });
 }
 
 function save() {
@@ -251,43 +345,7 @@ function ago(t) {
 
 const e1rm = (w, r) => (r > 0 ? w * (1 + r / 30) : 0);
 
-/* Most recent completed performance of a given exercise. */
-function lastPerf(exId) {
-  for (let i = S.logs.length - 1; i >= 0; i--) {
-    const sets = S.logs[i].sets.filter(s => s.exId === exId);
-    if (sets.length) {
-      return { when: S.logs[i].end || S.logs[i].start,
-               top: sets.find(s => s.kind === 'top'), back: sets.find(s => s.kind === 'back') };
-    }
-  }
-  return null;
-}
-
-/* Double progression: clear the top of the rep range, earn the increment. */
-function target(sl, exId) {
-  const p = lastPerf(exId);
-  if (!p || !p.top) {
-    return exId === sl.startExId && Number.isFinite(sl.startWeight)
-      ? { weight: sl.startWeight, up: false, prev: null, starter: true }
-      : null;
-  }
-  // With two straight sets, earn a load increase only after owning the full
-  // rep range on both. A strong first set must not hide a large drop-off.
-  const effortOk = set => set && Number.isFinite(set.rpe) && set.rpe <= S.settings.defRir;
-  const hit = sl.mode === 'topback'
-    ? p.top.reps >= sl.top[1] && effortOk(p.top)
-    : p.top.reps >= sl.top[1] && effortOk(p.top) &&
-      !!p.back && p.back.reps >= sl.top[1] && effortOk(p.back);
-  return { weight: hit ? p.top.weight + sl.inc : p.top.weight, up: hit, prev: p };
-}
-
-function bestTop(exId) {
-  let best = null;
-  S.logs.forEach(l => l.sets.forEach(s => {
-    if (s.exId === exId && s.kind === 'top' && (!best || s.weight > best)) best = s.weight;
-  }));
-  return best;
-}
+const target = (sl, exId) => progressionTarget(S.logs, sl, exId, S.settings.defRir);
 
 const restFor = (sl, kind, exId) => {
   const base = isComp(exId || sl.pick) ? S.settings.restC : S.settings.restI;
@@ -378,8 +436,8 @@ function train() {
 function slotCard(sl, A) {
   const exId = (A.picks && A.picks[sl.id]) || sl.pick;
   const tg = target(sl, exId);
-  const p = tg ? tg.prev : lastPerf(exId);
-  const best = bestTop(exId);
+  const p = tg ? tg.prev : lastPerformance(S.logs, exId, sl.id);
+  const best = bestTopWeight(S.logs, exId, sl.id);
   const rows = ['top', 'back'].map(kind => setRow(sl, exId, kind, A, tg)).join('');
   const doneBoth = ['top', 'back'].every(k => logged(A, sl.id, k));
 
@@ -753,28 +811,14 @@ function exportData() {
    Malformed sessions/weigh-ins are dropped rather than crashing render later. */
 function sanitizeBackup(p) {
   if (!p || typeof p !== 'object' || !Array.isArray(p.logs)) return null;
-  const logs = p.logs
-    .filter(l => l && typeof l === 'object' && Array.isArray(l.sets) && Number.isFinite(+l.start))
-    .map(l => ({
-      id: String(l.id || 'L' + l.start), day: l.day === 'B' ? 'B' : 'A',
-      start: +l.start, end: Number.isFinite(+l.end) ? +l.end : +l.start,
-      ...(Number.isFinite(+l.dur) ? { dur: +l.dur } : {}),
-      notes: typeof l.notes === 'string' ? l.notes : '',
-      sets: l.sets.filter(x => x && typeof x === 'object').map(x => ({
-        slotId: String(x.slotId || ''), exId: String(x.exId || ''),
-        kind: x.kind === 'back' ? 'back' : 'top',
-        weight: num(x.weight), reps: num(x.reps), rpe: num(x.rpe), ts: num(x.ts),
-      })),
-    }));
-  const bw = (Array.isArray(p.bw) ? p.bw : [])
-    .filter(b => b && /^\d{4}-\d{2}-\d{2}$/.test(b.d) && Number.isFinite(+b.kg))
-    .map(b => ({ d: b.d, kg: +b.kg }));
   return {
     v: 1,
+    programRev: Number.isFinite(+p.programRev) ? +p.programRev : 0,
     settings: (p.settings && typeof p.settings === 'object') ? p.settings : {},
     exercises: (p.exercises && typeof p.exercises === 'object') ? p.exercises : {},
-    program: (p.program && p.program.A && p.program.B) ? p.program : null,
-    logs, bw, active: null, ui: { tab: 'train' },
+    program: sanitizeProgram(p.program),
+    logs: sanitizeLogs(p.logs), bw: sanitizeBodyweight(p.bw),
+    active: null, ui: { tab: 'train' },
   };
 }
 
@@ -792,7 +836,7 @@ const findSlot = (d, id) => S.program[d].slots.find(s => s.id === id);
 
 /* ------------------------------------------------------------ event wiring */
 
-document.addEventListener('click', e => {
+document.addEventListener('click', async e => {
   const t = e.target.closest('[data-act]');
   if (!t) return;
   const a = t.dataset.act, d = t.dataset.day, id = t.dataset.slot;
@@ -888,7 +932,11 @@ document.addEventListener('click', e => {
     case 'wipe':
       if (confirm('Erase every session, weigh-in and program change on this device?') &&
           confirm('Really erase? This cannot be undone.')) {
-        localStorage.removeItem(KEY); idbClear(); S = seed(); render(); toast('All data erased');
+        await idbClear();
+        localStorage.removeItem(KEY);
+        S = seed();
+        flushSave();
+        render(); toast('All data erased');
       }
       break;
   }
@@ -909,7 +957,14 @@ document.addEventListener('input', e => {
     case 'notes': if (S.active) { S.active.notes = t.value; save(); } break;
     case 'dayName': S.program[d].name = t.value; save(); break;
     case 'slotLabel': findSlot(d, id).label = t.value; save(); break;
-    case 'rng': findSlot(d, id)[t.dataset.k][+t.dataset.j] = Math.max(1, parseInt(num(t.value), 10) || 1); save(); break;
+    case 'rng': {
+      const sl = findSlot(d, id), key = t.dataset.k, index = +t.dataset.j;
+      sl[key] = updateRange(sl[key], index, t.value);
+      t.value = sl[key][index];
+      const peer = t.closest('.grid4')?.querySelector(`[data-k="${key}"][data-j="${index ? 0 : 1}"]`);
+      if (peer) peer.value = sl[key][index ? 0 : 1];
+      save(); break;
+    }
     case 'inc': findSlot(d, id).inc = num(t.value) || 1; save(); break;
     case 'cue': findSlot(d, id).cue = t.value; save(); break;
     case 'set': {
@@ -927,6 +982,10 @@ document.addEventListener('change', e => {
   const t = e.target, a = t.dataset.act, d = t.dataset.day, id = t.dataset.slot;
 
   if (a === 'swap' && S.active) {
+    if (S.active.sets.some(set => set.slotId === t.dataset.slot)) {
+      toast('Undo this slot’s logged sets before swapping exercise');
+      render(); return;
+    }
     S.active.picks[t.dataset.slot] = t.value;
     Object.keys(S.active.draft).forEach(k => { if (k.startsWith(t.dataset.slot + ':')) delete S.active.draft[k]; });
     save(); render(); return;

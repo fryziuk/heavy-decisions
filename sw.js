@@ -1,8 +1,8 @@
 /* Offline shell cache. Bump CACHE on every deploy so phones pick up new code. */
 
-const CACHE = 'pumplog-v15';
+const CACHE = 'pumplog-v16';
 const SHELL = [
-  './', './index.html', './styles.css', './app.js',
+  './', './index.html', './styles.css', './app.js', './domain.js',
   './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png',
 ];
 
@@ -28,10 +28,15 @@ self.addEventListener('fetch', e => {
   e.respondWith(
     fetch(req, { cache: 'no-store' })
       .then(res => {
-        const copy = res.clone();
-        caches.open(CACHE).then(c => c.put(req, copy)).catch(() => {});
+        if (res.ok) {
+          const copy = res.clone();
+          caches.open(CACHE).then(c => c.put(req, copy)).catch(() => {});
+        }
         return res;
       })
-      .catch(() => caches.match(req).then(hit => hit || caches.match('./index.html')))
+      .catch(() => caches.match(req).then(hit => {
+        if (hit) return hit;
+        return req.mode === 'navigate' ? caches.match('./index.html') : Response.error();
+      }))
   );
 });
