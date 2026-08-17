@@ -466,8 +466,8 @@ function render() {
   document.querySelector('meta[name="description"]').content = tr('meta.description');
   document.querySelector('meta[name="apple-mobile-web-app-title"]').content = tr('brand.name');
   $('#manifestLink').href = ukrainian ? './manifest-uk.webmanifest' : './manifest.webmanifest';
-  $('#appleIcon').href = ukrainian ? './icon-uk-180.png' : './icon-180.png';
-  $('#favicon').href = ukrainian ? './icon-uk-192.png' : './icon-192.png';
+  $('#appleIcon').href = './icon-180.png';
+  $('#favicon').href = './icon-192.png';
   $('#topline').textContent = tr(needsSetup ? 'tagline.setup' : 'tagline');
   const tabKeys = { train: 'tab.train', history: 'tab.history', body: 'tab.body', program: 'tab.program', data: 'tab.data' };
   document.querySelectorAll('#tabs button').forEach(button => {

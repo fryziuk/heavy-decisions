@@ -1,11 +1,10 @@
 /* Offline shell cache. Bump CACHE on every deploy so phones pick up new code. */
 
-const CACHE = 'heavy-decisions-v22';
+const CACHE = 'heavy-decisions-v23';
 const SHELL = [
   './', './index.html', './styles.css', './app.js', './domain.js', './i18n.js',
   './manifest.webmanifest', './manifest-uk.webmanifest',
   './icon-180.png', './icon-192.png', './icon-512.png',
-  './icon-uk-180.png', './icon-uk-192.png', './icon-uk-512.png',
 ];
 
 self.addEventListener('install', e => {
