@@ -21,10 +21,19 @@
 
 html, body {
   margin: 0;
+  min-height: -webkit-fill-available;
+  min-height: 100svh;
   background: var(--bg);
   color: var(--ink);
   font: 400 17px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", Segoe UI, Roboto, sans-serif;
   overscroll-behavior-y: none;
+}
+
+/* WebKit reports svh/fill-available minus the safe-area inset in installed
+   apps. In standalone mode, 100vh includes that inset and keeps a fixed footer
+   anchored identically on short and long views. */
+@media all and (display-mode: standalone) {
+  html, body { min-height: 100vh; }
 }
 
 body { padding-bottom: calc(64px + var(--safe-b)); }
@@ -208,6 +217,7 @@ label.fld > span { display: block; font-size: 12px; color: var(--dim2); margin-b
 
 #tabs {
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 25;
+  height: calc(55px + var(--safe-b));
   display: grid; grid-template-columns: repeat(5, 1fr);
   background: rgba(20, 22, 26, .94);
   backdrop-filter: saturate(150%) blur(12px);

@@ -1,6 +1,6 @@
 /* Offline shell cache. Bump CACHE on every deploy so phones pick up new code. */
 
-const CACHE = 'heavy-decisions-v24';
+const CACHE = 'heavy-decisions-v25';
 const SHELL = [
   './', './index.html', './styles.css', './app.js', './domain.js', './i18n.js',
   './manifest.webmanifest', './manifest-uk.webmanifest',
