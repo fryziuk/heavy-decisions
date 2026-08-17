@@ -339,7 +339,7 @@ function setRow(sl, exId, kind, A, tg) {
       ${stepper('reps', sl.id, kind, r, 1, 'reps')}
       ${stepper('rpe', sl.id, kind, rpe, 0.5, 'rpe')}
       <button class="ok ${done ? 'on' : ''}" data-act="log" data-slot="${sl.id}" data-kind="${kind}"
-        aria-label="${done ? 'Undo set' : 'Log set'}">${done ? '✓' : '＋'}</button>
+        aria-label="${done ? 'Undo set' : 'Log set'}">${done ? '✓' : '+'}</button>
     </div>`;
 }
 
