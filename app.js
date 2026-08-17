@@ -339,7 +339,9 @@ function setRow(sl, exId, kind, A, tg) {
       ${stepper('reps', sl.id, kind, r, 1, 'reps')}
       ${stepper('rpe', sl.id, kind, rpe, 0.5, 'rpe')}
       <button class="ok ${done ? 'on' : ''}" data-act="log" data-slot="${sl.id}" data-kind="${kind}"
-        aria-label="${done ? 'Undo set' : 'Log set'}">${done ? '✓' : '+'}</button>
+        aria-label="${done ? 'Undo set' : 'Log set'}"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+          <path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6"
+            stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     </div>`;
 }
 
