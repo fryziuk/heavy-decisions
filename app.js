@@ -343,14 +343,15 @@ function nextDay() {
 function train() {
   if (!S.active) {
     const nd = nextDay();
-    const other = nd === 'A' ? 'B' : 'A';
     const last = S.logs[S.logs.length - 1];
     return `
-      <button class="startBig" data-act="start" data-day="${nd}">
-        <b>Start Day ${nd}</b>
-        <i>${esc(S.program[nd].name)} &middot; up next</i>
-      </button>
-      <button class="startAlt" data-act="start" data-day="${other}">or Day ${other} — ${esc(S.program[other].name)}</button>
+      <div class="startChoices">
+        ${['A', 'B'].map(day => `
+          <button class="startBig" data-act="start" data-day="${day}">
+            <b>Start Day ${day}</b>
+            <i>${esc(S.program[day].name)}${day === nd ? ' &middot; up next' : ''}</i>
+          </button>`).join('')}
+      </div>
       ${last ? `
         <div class="card small">
           <div class="row spread"><b>Last: ${esc(S.program[last.day] ? S.program[last.day].name : 'Day ' + last.day)}</b>

@@ -112,14 +112,14 @@ label.fld > span { display: block; font-size: 12px; color: var(--dim2); margin-b
 /* ---------- start screen ---------- */
 
 .startBig {
-  width: 100%; min-height: 118px; margin: 8px 0 10px;
+  width: 100%; min-height: 108px;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
   background: var(--accent); border-color: var(--accent); color: var(--accent-ink);
   border-radius: 18px;
 }
+.startChoices { display: grid; gap: 10px; margin: 8px 0 14px; }
 .startBig b { font-size: 26px; letter-spacing: -.02em; }
 .startBig i { font-style: normal; font-size: 13px; opacity: .75; }
-.startAlt { width: 100%; margin-bottom: 14px; background: transparent; color: var(--dim); font-size: 15px; }
 
 /* ---------- exercise slot ---------- */
 
