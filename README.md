@@ -64,6 +64,8 @@ and works with no connection.
 Defaults follow Paul Carter's low-volume, high-effort approach while matching rep ranges
 to the movement: 6–10 for most compounds, 8–12 for isolations, and 10–15 for lateral
 raises. Sets finish near 2 RIR with enough rest to keep the second set productive.
+First-session weights are personalized from a 100 kg × 5 bench and 100 kg × 8 squat;
+machine-stack targets are deliberately conservative calibration guesses.
 No drop sets, giant sets, or finishers. Each slot's second set can be straight,
 rest-pause (RP), or lengthened partials (LP), and
 any slot can be switched to a classic **top set + back-off** structure in the Program

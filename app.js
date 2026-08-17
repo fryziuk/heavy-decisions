@@ -43,6 +43,9 @@ const LIBRARY = [
 
 const slot = (id, label, pick, options, top, back, style, inc, cue, mode) =>
   ({ id, label, pick, options, top, back, style, inc, cue, mode: mode || 'straight2' });
+const starter = (sl, weight, reps) => Object.assign(sl, {
+  startExId: sl.pick, startWeight: weight, startReps: reps,
+});
 
 function seedProgram() {
   /* Low-volume defaults: two straight working sets taken to ~2 reps in reserve.
@@ -53,23 +56,23 @@ function seedProgram() {
     A: {
       name: 'Full Body A',
       slots: [
-        slot('a1', 'Quads',           'back-squat',       ['back-squat', 'hack-squat', 'pendulum-squat', 'leg-press', 'smith-squat'], [6, 10], [6, 10], 'straight', 5, 'deep, control the negative'),
-        slot('a2', 'Horizontal Push', 'flat-bb-press',    ['flat-bb-press', 'machine-press', 'inc-db-press', 'inc-bb-press', 'dip'], [6, 10], [6, 10], 'straight', 2.5, 'full stretch at the bottom, no bounce'),
-        slot('a3', 'Horizontal Pull', 'db-row',           ['db-row', 'cs-row', 'seal-row', 'cable-row', 't-bar'], [6, 10], [6, 10], 'straight', 2.5, 'let the lats lengthen before each pull'),
-        slot('a4', 'Hamstrings',      'seated-curl',     ['seated-curl', 'lying-curl', 'nordic'], [8, 12], [8, 12], 'straight', 2.5, 'seated beats lying — hams fully lengthened'),
-        slot('a5', 'Side Delts',      'db-lat-raise',    ['db-lat-raise', 'cable-lat-raise', 'machine-lat-raise'], [10, 15], [10, 15], 'straight', 1, 'stable setup, control every rep'),
-        slot('a6', 'Triceps',         'pushdown',        ['pushdown', 'oh-cable-ext', 'skull', 'dip-machine'], [8, 12], [8, 12], 'straight', 2.5, 'keep elbows fixed; control the return'),
+        starter(slot('a1', 'Quads',           'back-squat',    ['back-squat', 'hack-squat', 'pendulum-squat', 'leg-press', 'smith-squat'], [6, 10], [6, 10], 'straight', 5, 'deep, control the negative'), 95, 8),
+        starter(slot('a2', 'Horizontal Push', 'flat-bb-press', ['flat-bb-press', 'machine-press', 'inc-db-press', 'inc-bb-press', 'dip'], [6, 10], [6, 10], 'straight', 2.5, 'full stretch at the bottom, no bounce'), 87.5, 8),
+        starter(slot('a3', 'Horizontal Pull', 'db-row',        ['db-row', 'cs-row', 'seal-row', 'cable-row', 't-bar'], [6, 10], [6, 10], 'straight', 2.5, 'weight is per dumbbell; keep torso still'), 30, 8),
+        starter(slot('a4', 'Hamstrings',      'seated-curl',   ['seated-curl', 'lying-curl', 'nordic'], [8, 12], [8, 12], 'straight', 2.5, 'seated beats lying — hams fully lengthened'), 35, 10),
+        starter(slot('a5', 'Side Delts',      'db-lat-raise',  ['db-lat-raise', 'cable-lat-raise', 'machine-lat-raise'], [10, 15], [10, 15], 'straight', 1, 'weight is per dumbbell; no swinging'), 8, 12),
+        starter(slot('a6', 'Triceps',         'pushdown',      ['pushdown', 'oh-cable-ext', 'skull', 'dip-machine'], [8, 12], [8, 12], 'straight', 2.5, 'stack varies by machine; keep elbows fixed'), 25, 10),
       ],
     },
     B: {
       name: 'Full Body B',
       slots: [
-        slot('b1', 'Hinge',         'rdl',           ['rdl', 'good-morning', 'back-ext', 'lying-curl'], [6, 10], [6, 10], 'straight', 2.5, 'push hips back, feel the hamstring stretch'),
-        slot('b2', 'Vertical Pull', 'pulldown',      ['pulldown', 'neutral-pulldown', 'pullover', 'pullup'], [6, 10], [6, 10], 'straight', 2.5, 'full hang between reps, lats loaded long'),
-        slot('b3', 'Vertical Push', 'machine-ohp',   ['machine-ohp', 'db-ohp', 'bb-ohp'], [8, 12], [8, 12], 'straight', 2, 'machine stability lets you push hard with less noise'),
-        slot('b4', 'Quads',         'leg-press',     ['leg-press', 'hack-squat', 'bulgarian', 'leg-ext'], [8, 12], [8, 12], 'straight', 5, 'deep knee bend, slow eccentric'),
-        slot('b5', 'Biceps',        'inc-db-curl',   ['inc-db-curl', 'ez-curl', 'cable-curl', 'preacher', 'hammer'], [8, 12], [8, 12], 'straight', 1, 'incline puts the elbow behind you — full stretch'),
-        slot('b6', 'Calves',        'press-calf',    ['press-calf', 'standing-calf', 'seated-calf'], [8, 12], [8, 12], 'straight', 2.5, 'pause in the deep stretch; use full controlled reps'),
+        starter(slot('b1', 'Hinge',         'rdl',          ['rdl', 'good-morning', 'back-ext', 'lying-curl'], [6, 10], [6, 10], 'straight', 2.5, 'push hips back, feel the hamstring stretch'), 80, 8),
+        starter(slot('b2', 'Vertical Pull', 'pulldown',     ['pulldown', 'neutral-pulldown', 'pullover', 'pullup'], [6, 10], [6, 10], 'straight', 2.5, 'stack varies; full hang between reps'), 50, 8),
+        starter(slot('b3', 'Vertical Push', 'machine-ohp',  ['machine-ohp', 'db-ohp', 'bb-ohp'], [8, 12], [8, 12], 'straight', 2, 'stack varies; stable setup and controlled reps'), 35, 10),
+        starter(slot('b4', 'Quads',         'leg-press',    ['leg-press', 'hack-squat', 'bulgarian', 'leg-ext'], [8, 12], [8, 12], 'straight', 5, 'machine varies; deep knee bend, slow eccentric'), 120, 10),
+        starter(slot('b5', 'Biceps',        'inc-db-curl',  ['inc-db-curl', 'ez-curl', 'cable-curl', 'preacher', 'hammer'], [8, 12], [8, 12], 'straight', 1, 'weight is per dumbbell; keep shoulder still'), 10, 10),
+        starter(slot('b6', 'Calves',        'press-calf',   ['press-calf', 'standing-calf', 'seated-calf'], [8, 12], [8, 12], 'straight', 2.5, 'machine varies; pause in the deep stretch'), 80, 10),
       ],
     },
   };
@@ -118,6 +121,10 @@ function load() {
           const def = base.program[d].slots.find(x => x.id === sl.id);
           if (def) sl.cue = def.cue;
         }
+        const def = base.program[d].slots.find(x => x.id === sl.id);
+        if (def && sl.startExId === undefined) sl.startExId = def.startExId;
+        if (def && sl.startWeight === undefined) sl.startWeight = def.startWeight;
+        if (def && sl.startReps === undefined) sl.startReps = def.startReps;
         if (!sl.mode) sl.mode = 'topback';
       }));
       // Rev 2 changes only untouched Day A defaults. Custom selections survive.
@@ -259,7 +266,11 @@ function lastPerf(exId) {
 /* Double progression: clear the top of the rep range, earn the increment. */
 function target(sl, exId) {
   const p = lastPerf(exId);
-  if (!p || !p.top) return null;
+  if (!p || !p.top) {
+    return exId === sl.startExId && Number.isFinite(sl.startWeight)
+      ? { weight: sl.startWeight, up: false, prev: null, starter: true }
+      : null;
+  }
   // With two straight sets, earn a load increase only after owning the full
   // rep range on both. A strong first set must not hide a large drop-off.
   const effortOk = set => set && Number.isFinite(set.rpe) && set.rpe <= S.settings.defRir;
@@ -409,7 +420,7 @@ function setRow(sl, exId, kind, A, tg) {
   // prefill: logged value > local draft > progression target (set 2 mirrors set 1 in straight mode)
   const backGuess = tg ? (straight2 ? tg.weight : Math.round(tg.weight * 0.8 / sl.inc) * sl.inc) : '';
   let w = done ? done.weight : (d.weight !== undefined ? d.weight : (tg ? (kind === 'top' ? tg.weight : backGuess) : ''));
-  let r = done ? done.reps : (d.reps !== undefined ? d.reps : S.settings.defReps);
+  let r = done ? done.reps : (d.reps !== undefined ? d.reps : (sl.startReps || S.settings.defReps));
   let rir = done ? done.rpe : (d.rpe !== undefined ? d.rpe : S.settings.defRir);
 
   return `
