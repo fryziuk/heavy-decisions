@@ -10,7 +10,7 @@ import {
 import { normalizeLanguage, translate } from './i18n.js';
 
 const KEY = 'pumplog.v1';
-const PROGRAM_REV = 2;
+const PROGRAM_REV = 3;
 const $ = (s, r = document) => r.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const preferredLanguage = () => normalizeLanguage(typeof navigator === 'undefined' ? 'en' : navigator.language);
@@ -21,7 +21,8 @@ const preferredLanguage = () => normalizeLanguage(typeof navigator === 'undefine
 const LIBRARY = [
   ['hack-squat', 'Hack Squat', 'c'], ['back-squat', 'Back Squat', 'c'],
   ['pendulum-squat', 'Pendulum Squat', 'c'], ['smith-squat', 'Smith Machine Squat', 'c'],
-  ['leg-press', 'Leg Press', 'c'], ['bulgarian', 'Bulgarian Split Squat', 'c'],
+  ['leg-press', 'Leg Press', 'c'], ['walking-lunge', 'Walking Lunge', 'c'],
+  ['bulgarian', 'Bulgarian Split Squat', 'c'],
   ['leg-ext', 'Leg Extension', 'i'],
   ['rdl', 'Romanian Deadlift', 'c'], ['good-morning', 'Good Morning', 'c'],
   ['back-ext', '45° Back Extension', 'i'], ['seated-curl', 'Seated Leg Curl', 'i'],
@@ -77,7 +78,7 @@ function seedProgram() {
         starter(slot('b1', 'Hinge',         'rdl',          ['rdl', 'good-morning', 'back-ext', 'lying-curl'], [6, 10], [6, 10], 'straight', 2.5, 'push hips back, feel the hamstring stretch'), 80, 8),
         starter(slot('b2', 'Vertical Pull', 'pulldown',     ['pulldown', 'neutral-pulldown', 'pullover', 'pullup'], [6, 10], [6, 10], 'straight', 2.5, 'stack varies; full hang between reps'), 50, 8),
         starter(slot('b3', 'Vertical Push', 'machine-ohp',  ['machine-ohp', 'db-ohp', 'bb-ohp'], [8, 12], [8, 12], 'straight', 2, 'stack varies; stable setup and controlled reps'), 35, 10),
-        starter(slot('b4', 'Quads',         'leg-press',    ['leg-press', 'hack-squat', 'bulgarian', 'leg-ext'], [8, 12], [8, 12], 'straight', 5, 'machine varies; deep knee bend, slow eccentric'), 120, 10),
+        starter(slot('b4', 'Quads / Glutes','leg-press',    ['leg-press', 'hack-squat', 'walking-lunge', 'bulgarian', 'leg-ext'], [8, 12], [8, 12], 'straight', 5, 'control the negative and use a deep, stable range'), 120, 10),
         starter(slot('b5', 'Biceps',        'inc-db-curl',  ['inc-db-curl', 'ez-curl', 'cable-curl', 'preacher', 'hammer'], [8, 12], [8, 12], 'straight', 1, 'weight is per dumbbell; keep shoulder still'), 10, 10),
         starter(slot('b6', 'Calves',        'press-calf',   ['press-calf', 'standing-calf', 'seated-calf'], [8, 12], [8, 12], 'straight', 2.5, 'machine varies; pause in the deep stretch'), 80, 10),
       ],
@@ -245,6 +246,23 @@ function load() {
             sl.options = [change[1], ...sl.options.filter(x => x !== change[1])];
           }
         });
+        p.programRev = 2;
+        p.savedAt = Date.now();
+        localStorage.setItem(KEY, JSON.stringify(p));
+      }
+      // Rev 3 adds lunges to the quad/glute variations without changing the user's pick.
+      if ((p.programRev || 0) < 3 && p.program && p.program.B) {
+        const quadSlot = p.program.B.slots.find(sl => sl.id === 'b4');
+        if (quadSlot) {
+          if (quadSlot.label === 'Quads') quadSlot.label = 'Quads / Glutes';
+          if (!quadSlot.options.includes('walking-lunge')) {
+            const before = quadSlot.options.indexOf('bulgarian');
+            quadSlot.options.splice(before >= 0 ? before : quadSlot.options.length, 0, 'walking-lunge');
+          }
+          if (quadSlot.cue === 'machine varies; deep knee bend, slow eccentric') {
+            quadSlot.cue = 'control the negative and use a deep, stable range';
+          }
+        }
         p.programRev = PROGRAM_REV;
         p.savedAt = Date.now();
         localStorage.setItem(KEY, JSON.stringify(p));
@@ -350,7 +368,7 @@ const DEFAULT_CUES = {
   a3: 'weight is per dumbbell; keep torso still', a4: 'seated beats lying — hams fully lengthened',
   a5: 'weight is per dumbbell; no swinging', a6: 'stack varies by machine; keep elbows fixed',
   b1: 'push hips back, feel the hamstring stretch', b2: 'stack varies; full hang between reps',
-  b3: 'stack varies; stable setup and controlled reps', b4: 'machine varies; deep knee bend, slow eccentric',
+  b3: 'stack varies; stable setup and controlled reps', b4: 'control the negative and use a deep, stable range',
   b5: 'weight is per dumbbell; keep shoulder still', b6: 'machine varies; pause in the deep stretch',
 };
 
