@@ -1,5 +1,11 @@
 /* Pure training-domain helpers. No DOM or storage access, so these can be tested. */
 
+export function parseDecimal(value) {
+  const normalized = String(value ?? '').trim().replace(/\s+/g, '').replace(',', '.');
+  const number = Number(normalized);
+  return Number.isFinite(number) ? number : 0;
+}
+
 export function lastPerformance(logs, exId, slotId) {
   for (let i = logs.length - 1; i >= 0; i--) {
     const sets = logs[i].sets.filter(s =>

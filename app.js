@@ -3,7 +3,7 @@
 
 'use strict';
 
-import { bestTopWeight, lastPerformance, progressionTarget, updateRange } from './domain.js';
+import { bestTopWeight, lastPerformance, parseDecimal, progressionTarget, updateRange } from './domain.js';
 
 const KEY = 'pumplog.v1';
 const PROGRAM_REV = 2;
@@ -320,7 +320,7 @@ const exName = id => (S.exercises[id] ? S.exercises[id].name : id);
 const isComp = id => (S.exercises[id] ? S.exercises[id].kind : 'c') === 'c';
 const U = () => S.settings.unit;
 
-const num = v => { const n = parseFloat(v); return Number.isFinite(n) ? n : 0; };
+const num = parseDecimal;
 const trim = n => (Math.round(n * 100) / 100).toString();
 const mmss = s => { s = Math.max(0, Math.round(s)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
 const dayKey = t => {

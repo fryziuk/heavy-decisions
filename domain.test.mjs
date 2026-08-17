@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { bestTopWeight, lastPerformance, progressionTarget, updateRange } from './domain.js';
+import { bestTopWeight, lastPerformance, parseDecimal, progressionTarget, updateRange } from './domain.js';
 
 const slot = {
   id: 'a1', mode: 'straight2', top: [6, 10], inc: 2.5,
@@ -50,4 +50,11 @@ test('best weight is scoped to the current program slot', () => {
 test('range edits cannot leave min greater than max', () => {
   assert.deepEqual(updateRange([6, 10], 0, 12), [12, 12]);
   assert.deepEqual(updateRange([6, 10], 1, 4), [4, 4]);
+});
+
+test('decimal parser accepts dot and comma keyboards', () => {
+  assert.equal(parseDecimal('99.2'), 99.2);
+  assert.equal(parseDecimal('99,2'), 99.2);
+  assert.equal(parseDecimal(' 99,2 '), 99.2);
+  assert.equal(parseDecimal('not a weight'), 0);
 });
