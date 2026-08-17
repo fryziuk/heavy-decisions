@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { bestTopWeight, lastPerformance, parseDecimal, progressionTarget, updateRange } from './domain.js';
+import {
+  bestTopWeight, calculateBmi, lastPerformance, parseDecimal, progressionTarget,
+  scaleStarterWeight, strengthScale, updateRange,
+} from './domain.js';
 
 const slot = {
   id: 'a1', mode: 'straight2', top: [6, 10], inc: 2.5,
@@ -57,4 +60,22 @@ test('decimal parser accepts dot and comma keyboards', () => {
   assert.equal(parseDecimal('99,2'), 99.2);
   assert.equal(parseDecimal(' 99,2 '), 99.2);
   assert.equal(parseDecimal('not a weight'), 0);
+});
+
+test('BMI uses metric height and mass', () => {
+  assert.equal(calculateBmi(180, 81).toFixed(1), '25.0');
+  assert.equal(calculateBmi(0, 81), null);
+});
+
+test('strength scale uses the existing 100 kg by 5 baseline and stays conservative', () => {
+  assert.equal(strengthScale(100 * (1 + 5 / 30)), 1);
+  assert.equal(strengthScale(40), 0.5);
+  assert.equal(strengthScale(300), 2);
+});
+
+test('starter weights scale to the exercise increment', () => {
+  assert.equal(scaleStarterWeight(87.5, 1.1, 2.5), 97.5);
+  assert.equal(scaleStarterWeight(8, 0.8, 1), 6);
+  assert.equal(scaleStarterWeight(30, 0.8, 2.5), 25);
+  assert.equal(scaleStarterWeight(30, 1, 2.5), 30);
 });

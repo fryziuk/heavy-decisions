@@ -3,7 +3,10 @@
 
 'use strict';
 
-import { bestTopWeight, lastPerformance, parseDecimal, progressionTarget, updateRange } from './domain.js';
+import {
+  bestTopWeight, calculateBmi, lastPerformance, parseDecimal, progressionTarget,
+  scaleStarterWeight, strengthScale, updateRange,
+} from './domain.js';
 
 const KEY = 'pumplog.v1';
 const PROGRAM_REV = 2;
@@ -46,7 +49,7 @@ const LIBRARY = [
 const slot = (id, label, pick, options, top, back, style, inc, cue, mode) =>
   ({ id, label, pick, options, top, back, style, inc, cue, mode: mode || 'straight2' });
 const starter = (sl, weight, reps) => Object.assign(sl, {
-  startExId: sl.pick, startWeight: weight, startReps: reps,
+  startExId: sl.pick, baseStartWeight: weight, startWeight: weight, startReps: reps,
 });
 
 function seedProgram() {
@@ -87,6 +90,7 @@ function seed() {
     v: 1,
     programRev: PROGRAM_REV,
     settings: { unit: 'kg', restC: 180, restI: 120, targetMin: 60, beep: true, defReps: 8, defRir: 2 },
+    profile: null,
     exercises: ex,
     program: seedProgram(),
     logs: [],
@@ -126,7 +130,9 @@ function sanitizeProgram(value) {
           mode: sl.mode === 'topback' ? 'topback' : 'straight2',
         };
         if (typeof sl.startExId === 'string') clean.startExId = sl.startExId;
+        const baseStartWeight = finiteNumber(sl.baseStartWeight);
         const startWeight = finiteNumber(sl.startWeight), startReps = finiteNumber(sl.startReps);
+        if (baseStartWeight !== null) clean.baseStartWeight = baseStartWeight;
         if (startWeight !== null) clean.startWeight = startWeight;
         if (startReps !== null && startReps > 0) clean.startReps = startReps;
         return clean;
@@ -143,7 +149,7 @@ function sanitizeSets(value) {
       const clean = {
         slotId: String(set.slotId || ''), exId: String(set.exId || ''),
         kind: set.kind === 'back' ? 'back' : 'top',
-        weight: num(set.weight), reps: num(set.reps),
+        weight: parseDecimal(set.weight), reps: parseDecimal(set.reps),
       };
       const rpe = finiteNumber(set.rpe), ts = finiteNumber(set.ts);
       if (rpe !== null) clean.rpe = rpe;
@@ -170,6 +176,18 @@ function sanitizeBodyweight(value) {
     .map(row => ({ d: row.d, kg: +row.kg }));
 }
 
+function sanitizeProfile(value) {
+  if (!value || typeof value !== 'object') return null;
+  const heightCm = parseDecimal(value.heightCm), massKg = parseDecimal(value.massKg), bench1Rm = parseDecimal(value.bench1Rm);
+  if (heightCm < 120 || heightCm > 230 || massKg < 35 || massKg > 250 || bench1Rm < 20 || bench1Rm > 300) return null;
+  return {
+    heightCm, massKg, bench1Rm,
+    strengthScale: strengthScale(bench1Rm),
+    createdAt: finiteNumber(value.createdAt) || Date.now(),
+    updatedAt: finiteNumber(value.updatedAt) || Date.now(),
+  };
+}
+
 /* -------------------------------------------------------------------- state */
 
 let S = load();
@@ -191,6 +209,7 @@ function load() {
       p.ui = { tab: 'train' };
       p.logs = sanitizeLogs(p.logs);
       p.bw = sanitizeBodyweight(p.bw);
+      p.profile = sanitizeProfile(p.profile);
       // keep the user's program; backfill fields added by newer app versions
       p.program = sanitizeProgram(p.program);
       if (!p.program) p.program = base.program;
@@ -201,6 +220,7 @@ function load() {
         }
         const def = base.program[d].slots.find(x => x.id === sl.id);
         if (def && sl.startExId === undefined) sl.startExId = def.startExId;
+        if (def && sl.baseStartWeight === undefined) sl.baseStartWeight = def.baseStartWeight;
         if (def && sl.startWeight === undefined) sl.startWeight = def.startWeight;
         if (def && sl.startReps === undefined) sl.startReps = def.startReps;
         if (!sl.mode) sl.mode = 'topback';
@@ -385,10 +405,40 @@ function beep() {
 /* ==================================================================== views */
 
 function render() {
+  const needsSetup = !S.profile;
+  $('#tabs').classList.toggle('hidden', needsSetup);
+  $('#topline').textContent = needsSetup ? 'Personalize your starting weights' : '2× full body · 2 hard sets';
+  if (needsSetup) {
+    $('#view').innerHTML = onboarding();
+    tick();
+    return;
+  }
   const v = { train, history, body, program, data }[S.ui.tab] || train;
   $('#view').innerHTML = v();
   document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === S.ui.tab));
   tick();
+}
+
+function onboarding() {
+  return `
+    <section class="onboarding">
+      <div class="setupMark">1</div>
+      <h1>Set your baseline</h1>
+      <p class="muted">Three numbers personalize every starting load. You can change them later in Data.</p>
+      <div class="card setupCard">
+        <div class="grid2">
+          <label class="fld"><span>Height (cm)</span>
+            <input id="setupHeight" inputmode="decimal" autocomplete="off" placeholder="e.g. 180"></label>
+          <label class="fld"><span>Body mass (kg)</span>
+            <input id="setupMass" inputmode="decimal" autocomplete="off" placeholder="e.g. 82"></label>
+        </div>
+        <label class="fld"><span>Bench press estimated 1RM (kg)</span>
+          <input id="setupBench" inputmode="decimal" autocomplete="off" placeholder="e.g. 117"></label>
+        <div class="tiny muted">Use your heaviest single or an estimate. For reference, 100 kg × 5 reps is about 116.7 kg.</div>
+        <button class="primary big" style="margin-top:16px" data-act="saveProfile" data-source="setup">Create my program</button>
+      </div>
+      <div class="tiny muted center">Starter weights are estimates. On your first workout, adjust them to finish each set near the prescribed 2 RIR.</div>
+    </section>`;
 }
 
 /* ------------------------------------------------------------------- train  */
@@ -570,6 +620,16 @@ function body() {
   const wkAvg = wk.length ? wk.reduce((a, b) => a + b.kg, 0) / wk.length : null;
 
   return `
+    <h2>Profile</h2>
+    <div class="card">
+      <div class="stat">
+        <div><b>${trim(S.profile.heightCm)}</b><span>height cm</span></div>
+        <div><b>${trim(S.profile.massKg)}</b><span>baseline kg</span></div>
+        <div><b>${calculateBmi(S.profile.heightCm, S.profile.massKg).toFixed(1)}</b><span>BMI</span></div>
+        <div><b>${trim(S.profile.bench1Rm)}</b><span>bench 1RM kg</span></div>
+      </div>
+      <div class="tiny muted" style="margin-top:10px">BMI is a simple height-to-mass ratio, not a diagnosis or body-fat measurement.</div>
+    </div>
     <h2>Bodyweight</h2>
     <div class="card">
       <div class="row" style="gap:8px">
@@ -699,6 +759,23 @@ function slotEditor(d, sl, i) {
 function data() {
   const bytes = new Blob([JSON.stringify(S)]).size;
   return `
+    <h2>Profile &amp; starter weights</h2>
+    <div class="card">
+      <div class="grid2">
+        <label class="fld"><span>Height (cm)</span>
+          <input id="profileHeight" inputmode="decimal" value="${trim(S.profile.heightCm)}"></label>
+        <label class="fld"><span>Body mass (kg)</span>
+          <input id="profileMass" inputmode="decimal" value="${trim(S.profile.massKg)}"></label>
+      </div>
+      <label class="fld"><span>Bench press estimated 1RM (kg)</span>
+        <input id="profileBench" inputmode="decimal" value="${trim(S.profile.bench1Rm)}"></label>
+      <div class="row spread small" style="margin:2px 0 12px">
+        <span class="muted">Current BMI</span><b>${calculateBmi(S.profile.heightCm, S.profile.massKg).toFixed(1)}</b>
+      </div>
+      <button class="primary" style="width:100%" data-act="saveProfile" data-source="profile">Update profile &amp; starter weights</button>
+      <div class="tiny muted" style="margin-top:8px">This rescales only starter suggestions. Logged training and progression history stay unchanged.</div>
+    </div>
+
     <h2>Settings</h2>
     <div class="card">
       <div class="grid2">
@@ -815,6 +892,7 @@ function sanitizeBackup(p) {
     v: 1,
     programRev: Number.isFinite(+p.programRev) ? +p.programRev : 0,
     settings: (p.settings && typeof p.settings === 'object') ? p.settings : {},
+    profile: sanitizeProfile(p.profile),
     exercises: (p.exercises && typeof p.exercises === 'object') ? p.exercises : {},
     program: sanitizeProgram(p.program),
     logs: sanitizeLogs(p.logs), bw: sanitizeBodyweight(p.bw),
@@ -834,6 +912,38 @@ function restore(text) {
 
 const findSlot = (d, id) => S.program[d].slots.find(s => s.id === id);
 
+function rescaleStarterWeights(previousScale, nextScale) {
+  ['A', 'B'].forEach(day => S.program[day].slots.forEach(sl => {
+    if (!Number.isFinite(sl.startWeight)) return;
+    if (!Number.isFinite(sl.baseStartWeight)) sl.baseStartWeight = sl.startWeight / (previousScale || 1);
+    sl.startWeight = scaleStarterWeight(sl.baseStartWeight, nextScale, sl.inc);
+  }));
+}
+
+function saveProfile(source) {
+  const prefix = source === 'setup' ? 'setup' : 'profile';
+  const heightCm = num(($(`#${prefix}Height`) || {}).value);
+  const massKg = num(($(`#${prefix}Mass`) || {}).value);
+  const bench1Rm = num(($(`#${prefix}Bench`) || {}).value);
+  if (heightCm < 120 || heightCm > 230) { toast('Enter height between 120 and 230 cm'); return; }
+  if (massKg < 35 || massKg > 250) { toast('Enter body mass between 35 and 250 kg'); return; }
+  if (bench1Rm < 20 || bench1Rm > 300) { toast('Enter bench 1RM between 20 and 300 kg'); return; }
+
+  const previousScale = S.profile ? S.profile.strengthScale : 1;
+  const nextScale = strengthScale(bench1Rm);
+  rescaleStarterWeights(previousScale, nextScale);
+  const now = Date.now();
+  S.profile = {
+    heightCm, massKg, bench1Rm, strengthScale: nextScale,
+    createdAt: S.profile ? S.profile.createdAt : now,
+    updatedAt: now,
+  };
+  const today = dayKey(now);
+  S.bw = S.bw.filter(row => row.d !== today).concat({ d: today, kg: massKg });
+  save(); render();
+  toast(source === 'setup' ? `Ready · BMI ${calculateBmi(heightCm, massKg).toFixed(1)}` : 'Profile updated');
+}
+
 /* ------------------------------------------------------------ event wiring */
 
 document.addEventListener('click', async e => {
@@ -842,6 +952,7 @@ document.addEventListener('click', async e => {
   const a = t.dataset.act, d = t.dataset.day, id = t.dataset.slot;
 
   switch (a) {
+    case 'saveProfile': saveProfile(t.dataset.source); break;
     case 'start': startSession(t.dataset.day); break;
     case 'finish': finishSession(); break;
     case 'pause': {
@@ -919,7 +1030,9 @@ document.addEventListener('click', async e => {
     }
     case 'resetProgram':
       if (confirm('Restore the default two-day program? Your logs are kept.')) {
-        S.program = seedProgram(); save(); render();
+        S.program = seedProgram();
+        rescaleStarterWeights(1, S.profile ? S.profile.strengthScale : 1);
+        save(); render();
       }
       break;
 

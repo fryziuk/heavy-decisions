@@ -6,6 +6,26 @@ export function parseDecimal(value) {
   return Number.isFinite(number) ? number : 0;
 }
 
+export function calculateBmi(heightCm, massKg) {
+  const heightM = Number(heightCm) / 100;
+  const mass = Number(massKg);
+  if (!Number.isFinite(heightM) || heightM <= 0 || !Number.isFinite(mass) || mass <= 0) return null;
+  return mass / (heightM * heightM);
+}
+
+export function strengthScale(benchOneRepMax, referenceOneRepMax = 100 * (1 + 5 / 30)) {
+  const ratio = Number(benchOneRepMax) / referenceOneRepMax;
+  if (!Number.isFinite(ratio) || ratio <= 0) return 1;
+  return Math.min(2, Math.max(0.5, ratio));
+}
+
+export function scaleStarterWeight(weight, scale, increment) {
+  const base = Number(weight), ratio = Number(scale);
+  const step = Number(increment) > 0 ? Number(increment) : 1;
+  if (!Number.isFinite(base) || base <= 0 || !Number.isFinite(ratio) || ratio <= 0) return 0;
+  return Math.max(step, Math.round((base * ratio) / step) * step);
+}
+
 export function lastPerformance(logs, exId, slotId) {
   for (let i = logs.length - 1; i >= 0; i--) {
     const sets = logs[i].sets.filter(s =>

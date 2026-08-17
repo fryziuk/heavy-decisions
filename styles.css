@@ -57,6 +57,8 @@ main { padding: 16px 16px 24px; max-width: 620px; margin: 0 auto; }
 h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .09em; color: var(--dim2); margin: 26px 0 10px; }
 h2:first-child { margin-top: 4px; }
 
+h1 { margin: 0; font-size: 32px; line-height: 1.1; letter-spacing: -.035em; }
+
 .card {
   background: var(--card);
   border: 1px solid var(--line);
@@ -120,6 +122,18 @@ label.fld > span { display: block; font-size: 12px; color: var(--dim2); margin-b
 .startChoices { display: grid; gap: 10px; margin: 8px 0 14px; }
 .startBig b { font-size: 26px; letter-spacing: -.02em; }
 .startBig i { font-style: normal; font-size: 13px; opacity: .75; }
+
+/* ---------- first-run setup ---------- */
+
+.onboarding { padding-top: 8vh; max-width: 480px; margin: 0 auto; }
+.onboarding > p { margin: 10px 0 22px; }
+.setupCard { padding: 18px; }
+.setupMark {
+  width: 42px; height: 42px; margin-bottom: 18px;
+  display: grid; place-items: center;
+  border-radius: 13px; background: var(--accent); color: var(--accent-ink);
+  font-size: 21px; font-weight: 750;
+}
 
 /* ---------- exercise slot ---------- */
 
