@@ -106,9 +106,8 @@ function load() {
       // always open on Train — the start button should be the first thing you see
       p.ui = { tab: 'train' };
       p.logs = p.logs || []; p.bw = p.bw || [];
-      // no sessions logged yet → safe to adopt updated default program;
-      // otherwise keep theirs but backfill cues onto untouched default slots
-      if (!p.program || !p.logs || !p.logs.length) p.program = base.program;
+      // keep the user's program; backfill fields added by newer app versions
+      if (!p.program) p.program = base.program;
       else ['A', 'B'].forEach(d => (p.program[d] ? p.program[d].slots : []).forEach(sl => {
         if (sl.cue === undefined) {
           const def = base.program[d].slots.find(x => x.id === sl.id);
@@ -128,8 +127,55 @@ let saveTimer = null;
 function flushSave() {
   clearTimeout(saveTimer);
   saveTimer = null;
-  try { localStorage.setItem(KEY, JSON.stringify(S)); }
+  try {
+    S.savedAt = Date.now();
+    const json = JSON.stringify(S);
+    localStorage.setItem(KEY, json);
+    idbPut(json);
+  }
   catch (e) { toast('Could not save — storage full?'); }
+}
+
+/* --- durability: mirror the whole state into IndexedDB ------------------
+   localStorage is the fast synchronous store; IndexedDB is the
+   eviction-resistant copy. On boot the newer of the two wins, so a cleared
+   or evicted localStorage no longer means a lost logbook. --------------- */
+
+const IDB = { db: null };
+
+function idbOpen() {
+  return new Promise(res => {
+    if (!('indexedDB' in self)) return res(null);
+    try {
+      const r = indexedDB.open('pumplog', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('kv');
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => res(null);
+    } catch (e) { res(null); }
+  });
+}
+
+function idbPut(json) {
+  if (!IDB.db) return;
+  try { IDB.db.transaction('kv', 'readwrite').objectStore('kv').put(json, 'state'); }
+  catch (e) { /* mirror is best-effort */ }
+}
+
+function idbGet() {
+  return new Promise(res => {
+    if (!IDB.db) return res(null);
+    try {
+      const r = IDB.db.transaction('kv').objectStore('kv').get('state');
+      r.onsuccess = () => res(r.result || null);
+      r.onerror = () => res(null);
+    } catch (e) { res(null); }
+  });
+}
+
+function idbClear() {
+  if (!IDB.db) return;
+  try { IDB.db.transaction('kv', 'readwrite').objectStore('kv').delete('state'); }
+  catch (e) { /* ignore */ }
 }
 
 function save() {
@@ -150,7 +196,10 @@ const U = () => S.settings.unit;
 const num = v => { const n = parseFloat(v); return Number.isFinite(n) ? n : 0; };
 const trim = n => (Math.round(n * 100) / 100).toString();
 const mmss = s => { s = Math.max(0, Math.round(s)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
-const dayKey = t => new Date(t).toISOString().slice(0, 10);
+const dayKey = t => {
+  const d = new Date(t);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 
 function niceDate(t) {
   const d = new Date(t), now = new Date();
@@ -161,8 +210,9 @@ function niceDate(t) {
 }
 
 function ago(t) {
-  const days = Math.floor((Date.now() - t) / 864e5);
-  return days <= 0 ? 'today' : days === 1 ? '1 day ago' : days < 14 ? days + ' days ago'
+  const mid = x => { const d = new Date(x); d.setHours(0, 0, 0, 0); return d.getTime(); };
+  const days = Math.round((mid(Date.now()) - mid(t)) / 864e5);
+  return days <= 0 ? 'today' : days === 1 ? 'yesterday' : days < 14 ? days + ' days ago'
     : Math.round(days / 7) + ' weeks ago';
 }
 
@@ -196,9 +246,10 @@ function bestTop(exId) {
   return best;
 }
 
-const restFor = (sl, kind) =>
-  kind === 'top' ? (isComp(sl.pick) ? S.settings.restC : S.settings.restI)
-                 : Math.round((isComp(sl.pick) ? S.settings.restC : S.settings.restI) * 0.7);
+const restFor = (sl, kind, exId) => {
+  const base = isComp(exId || sl.pick) ? S.settings.restC : S.settings.restI;
+  return kind === 'top' ? base : Math.round(base * 0.7);
+};
 
 function toast(msg) {
   const t = document.createElement('div');
@@ -263,7 +314,7 @@ function train() {
             <span class="muted">${ago(last.end || last.start)}</span></div>
           <div class="muted" style="margin-top:6px">
             ${last.sets.length} sets &middot; ${Math.round(last.sets.reduce((a, s) => a + s.weight * s.reps, 0)).toLocaleString()} ${U()} total
-            ${last.end ? ' &middot; ' + mmss((last.end - last.start) / 1000) : ''}
+            ${last.end ? ' &middot; ' + mmss((last.dur !== undefined ? last.dur : last.end - last.start) / 1000) : ''}
           </div>
         </div>` : ''}`;
   }
@@ -294,7 +345,7 @@ function slotCard(sl, A) {
         <div class="slotLabel">${esc(sl.label)}</div>
         <div class="row" style="margin-bottom:8px">
           <select class="grow" data-act="swap" data-slot="${sl.id}" style="margin-bottom:0">
-            ${sl.options.map(o => `<option value="${o}" ${o === exId ? 'selected' : ''}>${esc(exName(o))}</option>`).join('')}
+            ${sl.options.map(o => `<option value="${esc(o)}" ${o === exId ? 'selected' : ''}>${esc(exName(o))}</option>`).join('')}
           </select>
           <a class="vid" target="_blank" rel="noopener" aria-label="How to do ${esc(exName(exId))}"
             href="https://www.youtube.com/results?search_query=${encodeURIComponent(exName(exId) + ' form technique')}">&#9654;</a>
@@ -386,7 +437,7 @@ function history() {
 
 function logCard(l) {
   const vol = Math.round(l.sets.reduce((a, s) => a + s.weight * s.reps, 0));
-  const dur = l.end ? mmss((l.end - l.start) / 1000) : '—';
+  const dur = l.end ? mmss((l.dur !== undefined ? l.dur : l.end - l.start) / 1000) : '—';
   return `
     <details class="log">
       <summary>
@@ -402,7 +453,7 @@ function logCard(l) {
               <span class="muted tiny">e1RM ${Math.round(e1rm(s.weight, s.reps))}</span></span>
           </div>`).join('')}
         ${l.notes ? `<div class="small muted" style="margin-top:10px">“${esc(l.notes)}”</div>` : ''}
-        <button class="ghost danger" style="margin-top:10px" data-act="delLog" data-id="${l.id}">Delete session</button>
+        <button class="ghost danger" style="margin-top:10px" data-act="delLog" data-id="${esc(l.id)}">Delete session</button>
       </div>
     </details>`;
 }
@@ -438,7 +489,7 @@ function body() {
       <div class="card">
         ${list.map(b => `<div class="bwRow"><span>${esc(b.d)}</span>
           <span><b>${trim(b.kg)}</b> <span class="muted">${U()}</span>
-          <button class="icon" data-act="bwDel" data-d="${b.d}" aria-label="delete">✕</button></span></div>`).join('')}
+          <button class="icon" data-act="bwDel" data-d="${esc(b.d)}" aria-label="delete">✕</button></span></div>`).join('')}
       </div>` : `<div class="card muted small">No weigh-ins yet. Same time of day, after waking, is the most consistent.</div>`}`;
 }
 
@@ -502,13 +553,13 @@ function slotEditor(d, sl, i) {
       <div class="chips">
         ${sl.options.map(o => `
           <span class="chip ${o === sl.pick ? 'sel' : ''}">
-            <span data-act="setPick" data-day="${d}" data-slot="${sl.id}" data-ex="${o}">${esc(exName(o))}</span>
-            ${sl.options.length > 1 ? `<button data-act="delOpt" data-day="${d}" data-slot="${sl.id}" data-ex="${o}" aria-label="remove">✕</button>` : ''}
+            <span data-act="setPick" data-day="${d}" data-slot="${sl.id}" data-ex="${esc(o)}">${esc(exName(o))}</span>
+            ${sl.options.length > 1 ? `<button data-act="delOpt" data-day="${d}" data-slot="${sl.id}" data-ex="${esc(o)}" aria-label="remove">✕</button>` : ''}
           </span>`).join('')}
       </div>
       <select data-act="addOpt" data-day="${d}" data-slot="${sl.id}">
         <option value="">+ add a variation…</option>
-        ${others.map(e => `<option value="${e.id}">${esc(e.name)}</option>`).join('')}
+        ${others.map(e => `<option value="${esc(e.id)}">${esc(e.name)}</option>`).join('')}
         <option value="__new">＋ new exercise…</option>
       </select>
 
@@ -575,8 +626,9 @@ function data() {
     <h2>Backup</h2>
     <div class="card">
       <div class="small muted" style="margin-bottom:10px">
-        Everything lives in this browser only — ${S.logs.length} sessions, ${S.bw.length} weigh-ins, ${(bytes / 1024).toFixed(1)} KB.
-        Export now and then so a cleared cache can’t cost you your logbook.
+        Data stays on this device — ${S.logs.length} sessions, ${S.bw.length} weigh-ins, ${(bytes / 1024).toFixed(1)} KB,
+        kept in two copies (localStorage + an IndexedDB mirror) so an evicted cache self-heals.
+        Still: export now and then — a file you hold is the only backup that survives losing the phone.
       </div>
       <button class="primary" style="width:100%" data-act="export">Download backup (.json)</button>
       <button class="ghost" style="width:100%;margin-top:8px" data-act="copy">Copy backup to clipboard</button>
@@ -611,7 +663,9 @@ function finishSession() {
   const A = S.active;
   if (!A) return;
   if (!A.sets.length) { toast('No sets logged'); return; }
-  S.logs.push({ id: 'L' + A.start, day: A.day, start: A.start, end: Date.now(), sets: A.sets, notes: A.notes || '' });
+  const end = Date.now();
+  const dur = end - A.start - A.pausedMs - (A.pausedAt ? end - A.pausedAt : 0);
+  S.logs.push({ id: 'L' + A.start, day: A.day, start: A.start, end, dur, sets: A.sets, notes: A.notes || '' });
   S.active = null;
   S.ui.tab = 'history';
   save(); render();
@@ -635,8 +689,10 @@ function toggleLog(slotId, kind) {
   const get = f => num(($(`#f-${slotId}-${kind}-${f}`) || {}).value);
   const weight = get('weight'), reps = get('reps'), rpe = get('rpe');
   if (!reps) { toast('Enter reps first'); return; }
-  A.sets.push({ slotId, exId: A.picks[slotId] || sl.pick, kind, weight, reps, rpe, ts: Date.now() });
-  A.restEnd = Date.now() + restFor(sl, kind) * 1000;
+  if (!weight && !confirm('No weight entered — log this set at bodyweight (0)?')) return;
+  const exId = A.picks[slotId] || sl.pick;
+  A.sets.push({ slotId, exId, kind, weight, reps, rpe, ts: Date.now() });
+  A.restEnd = Date.now() + restFor(sl, kind, exId) * 1000;
   save(); render();
 }
 
@@ -649,13 +705,43 @@ function exportData() {
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
 }
 
+/* Coerce an imported backup into a known-good shape; null = not a usable backup.
+   Malformed sessions/weigh-ins are dropped rather than crashing render later. */
+function sanitizeBackup(p) {
+  if (!p || typeof p !== 'object' || !Array.isArray(p.logs)) return null;
+  const logs = p.logs
+    .filter(l => l && typeof l === 'object' && Array.isArray(l.sets) && Number.isFinite(+l.start))
+    .map(l => ({
+      id: String(l.id || 'L' + l.start), day: l.day === 'B' ? 'B' : 'A',
+      start: +l.start, end: Number.isFinite(+l.end) ? +l.end : +l.start,
+      ...(Number.isFinite(+l.dur) ? { dur: +l.dur } : {}),
+      notes: typeof l.notes === 'string' ? l.notes : '',
+      sets: l.sets.filter(x => x && typeof x === 'object').map(x => ({
+        slotId: String(x.slotId || ''), exId: String(x.exId || ''),
+        kind: x.kind === 'back' ? 'back' : 'top',
+        weight: num(x.weight), reps: num(x.reps), rpe: num(x.rpe), ts: num(x.ts),
+      })),
+    }));
+  const bw = (Array.isArray(p.bw) ? p.bw : [])
+    .filter(b => b && /^\d{4}-\d{2}-\d{2}$/.test(b.d) && Number.isFinite(+b.kg))
+    .map(b => ({ d: b.d, kg: +b.kg }));
+  return {
+    v: 1,
+    settings: (p.settings && typeof p.settings === 'object') ? p.settings : {},
+    exercises: (p.exercises && typeof p.exercises === 'object') ? p.exercises : {},
+    program: (p.program && p.program.A && p.program.B) ? p.program : null,
+    logs, bw, active: null, ui: { tab: 'train' },
+  };
+}
+
 function restore(text) {
   let p;
   try { p = JSON.parse(text); } catch (e) { toast('That is not valid JSON'); return; }
-  if (!p || typeof p !== 'object' || !('logs' in p)) { toast('Not a Pump Log backup'); return; }
-  if (!confirm(`Restore ${(p.logs || []).length} sessions and ${(p.bw || []).length} weigh-ins? This replaces what is on this device.`)) return;
-  localStorage.setItem(KEY, JSON.stringify(p));
-  S = load(); render(); toast('Backup restored');
+  const clean = sanitizeBackup(p);
+  if (!clean) { toast('Not a Pump Log backup'); return; }
+  if (!confirm(`Restore ${clean.logs.length} sessions and ${clean.bw.length} weigh-ins? This replaces what is on this device.`)) return;
+  localStorage.setItem(KEY, JSON.stringify(clean));
+  S = load(); flushSave(); render(); toast('Backup restored');
 }
 
 const findSlot = (d, id) => S.program[d].slots.find(s => s.id === id);
@@ -668,7 +754,6 @@ document.addEventListener('click', e => {
   const a = t.dataset.act, d = t.dataset.day, id = t.dataset.slot;
 
   switch (a) {
-    case 'tab': S.ui.tab = t.dataset.tab; save(); render(); break;
     case 'start': startSession(t.dataset.day); break;
     case 'finish': finishSession(); break;
     case 'pause': {
@@ -759,7 +844,7 @@ document.addEventListener('click', e => {
     case 'wipe':
       if (confirm('Erase every session, weigh-in and program change on this device?') &&
           confirm('Really erase? This cannot be undone.')) {
-        localStorage.removeItem(KEY); S = seed(); render(); toast('All data erased');
+        localStorage.removeItem(KEY); idbClear(); S = seed(); render(); toast('All data erased');
       }
       break;
   }
@@ -797,7 +882,11 @@ document.addEventListener('input', e => {
 document.addEventListener('change', e => {
   const t = e.target, a = t.dataset.act, d = t.dataset.day, id = t.dataset.slot;
 
-  if (a === 'swap' && S.active) { S.active.picks[t.dataset.slot] = t.value; save(); render(); return; }
+  if (a === 'swap' && S.active) {
+    S.active.picks[t.dataset.slot] = t.value;
+    Object.keys(S.active.draft).forEach(k => { if (k.startsWith(t.dataset.slot + ':')) delete S.active.draft[k]; });
+    save(); render(); return;
+  }
 
   if (a === 'style') { findSlot(d, id).style = t.value; save(); return; }
 
@@ -882,6 +971,23 @@ const qTab = new URLSearchParams(location.search).get('tab');
 if (['train', 'history', 'body', 'program', 'data'].includes(qTab)) S.ui.tab = qTab;
 
 render();
+
+(async () => {
+  IDB.db = await idbOpen();
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+  const mirror = await idbGet();
+  if (mirror) {
+    try {
+      const m = JSON.parse(mirror);
+      if ((m.savedAt || 0) > (S.savedAt || 0)) {
+        localStorage.setItem(KEY, mirror);
+        S = load(); render();
+        toast('Recovered data from backup copy');
+      }
+    } catch (e) { /* corrupt mirror — overwritten below */ }
+  }
+  idbPut(JSON.stringify(S));
+})();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () =>

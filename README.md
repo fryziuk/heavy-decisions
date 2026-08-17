@@ -43,8 +43,11 @@ choose straight vs rest-pause back-offs, and add your own exercises.
 
 ## Back up your data
 
-Everything lives in this browser's local storage. Clear your Safari data and it's gone.
-The **Data** tab exports a `.json` backup (download or clipboard) and restores from one.
+Data lives on the device in two copies — localStorage plus an IndexedDB mirror; on
+launch the newer copy wins, so an evicted cache self-heals. The app also requests
+persistent storage from the browser. Losing the phone still loses the data, so the
+**Data** tab exports a `.json` backup (download or clipboard) and restores from one —
+imports are validated and sanitized before anything is overwritten.
 Installing to the home screen makes storage considerably more durable than a browser tab.
 
 ## Install on iPhone
