@@ -24,14 +24,15 @@ and your data never leaves the device.
 ## Using it
 
 **Train** — one big button starts whichever day is up next. Log each set: weight, reps,
-RPE (steppers, no typing needed). Tapping **+** stores the set and starts the rest timer.
+and reps in reserve (RIR; steppers, no typing needed). Tapping **+** stores the set and starts the rest timer.
 A session clock runs against your 60-minute target and turns red when you go over; header
 buttons **pause** the clock (rest timer freezes too) or **stop** and save the session.
 Each exercise shows a short form cue and a **▶** button that opens YouTube form tutorials
 for whatever variation is currently picked.
 
-**Progression** is double progression: clear the top of the rep range and the app adds
-that exercise's increment to your target next time, shown as `target 122.5kg ▲`. Each slot
+**Progression** is double progression: clear the top of the rep range on both straight
+sets and the app adds that exercise's increment to your target next time, shown as
+`target 122.5kg ▲`. (Top-set + back-off slots use the top set.) Each slot
 also shows what you did last time and your best-ever top set.
 
 **Body** — log bodyweight, see a trend line, 7-day average and all-time change.

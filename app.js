@@ -80,7 +80,7 @@ function seed() {
   LIBRARY.forEach(([id, name, kind]) => { ex[id] = { id, name, kind }; });
   return {
     v: 1,
-    settings: { unit: 'kg', restC: 180, restI: 90, targetMin: 60, beep: true, defReps: 5, defRpe: 1 },
+    settings: { unit: 'kg', restC: 180, restI: 90, targetMin: 60, beep: true, defReps: 5, defRir: 1 },
     exercises: ex,
     program: seedProgram(),
     logs: [],
@@ -102,7 +102,11 @@ function load() {
       const base = seed();
       // keep any exercises added by later app versions
       p.exercises = Object.assign(base.exercises, p.exercises || {});
+      const hadDefRir = p.settings && Object.prototype.hasOwnProperty.call(p.settings, 'defRir');
       p.settings = Object.assign(base.settings, p.settings || {});
+      // v1 called this value RPE even though it has always meant reps in reserve.
+      if (!hadDefRir && p.settings.defRpe !== undefined) p.settings.defRir = p.settings.defRpe;
+      delete p.settings.defRpe;
       // always open on Train — the start button should be the first thing you see
       p.ui = { tab: 'train' };
       p.logs = p.logs || []; p.bw = p.bw || [];
@@ -234,7 +238,11 @@ function lastPerf(exId) {
 function target(sl, exId) {
   const p = lastPerf(exId);
   if (!p || !p.top) return null;
-  const hit = p.top.reps >= sl.top[1];
+  // With two straight sets, earn a load increase only after owning the full
+  // rep range on both. A strong first set must not hide a large drop-off.
+  const hit = sl.mode === 'topback'
+    ? p.top.reps >= sl.top[1]
+    : p.top.reps >= sl.top[1] && !!p.back && p.back.reps >= sl.top[1];
   return { weight: hit ? p.top.weight + sl.inc : p.top.weight, up: hit, prev: p };
 }
 
@@ -378,7 +386,7 @@ function setRow(sl, exId, kind, A, tg) {
   const backGuess = tg ? (straight2 ? tg.weight : Math.round(tg.weight * 0.8 / sl.inc) * sl.inc) : '';
   let w = done ? done.weight : (d.weight !== undefined ? d.weight : (tg ? (kind === 'top' ? tg.weight : backGuess) : ''));
   let r = done ? done.reps : (d.reps !== undefined ? d.reps : S.settings.defReps);
-  let rpe = done ? done.rpe : (d.rpe !== undefined ? d.rpe : S.settings.defRpe);
+  let rir = done ? done.rpe : (d.rpe !== undefined ? d.rpe : S.settings.defRir);
 
   return `
     <div class="setRow ${done ? 'logged' : ''}">
@@ -388,7 +396,7 @@ function setRow(sl, exId, kind, A, tg) {
       </div>
       ${stepper('weight', sl.id, kind, w, sl.inc, U())}
       ${stepper('reps', sl.id, kind, r, 1, 'reps')}
-      ${stepper('rpe', sl.id, kind, rpe, 0.5, 'rpe')}
+      ${stepper('rpe', sl.id, kind, rir, 0.5, 'RIR')}
       <button class="ok ${done ? 'on' : ''}" data-act="log" data-slot="${sl.id}" data-kind="${kind}"
         aria-label="${done ? 'Undo set' : 'Log set'}"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
           <path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6"
@@ -449,7 +457,7 @@ function logCard(l) {
         ${l.sets.map(s => `
           <div class="logSet">
             <span class="nm"><span class="badge ${s.kind === 'top' ? '' : 'b'}">${s.kind === 'top' ? 'S1' : 'S2'}</span> ${esc(exName(s.exId))}</span>
-            <span>${trim(s.weight)}${U()} &times; ${s.reps}${s.rpe ? ` <span class="muted">@${trim(s.rpe)}</span>` : ''}
+            <span>${trim(s.weight)}${U()} &times; ${s.reps}${Number.isFinite(s.rpe) ? ` <span class="muted">${trim(s.rpe)} RIR</span>` : ''}
               <span class="muted tiny">e1RM ${Math.round(e1rm(s.weight, s.reps))}</span></span>
           </div>`).join('')}
         ${l.notes ? `<div class="small muted" style="margin-top:10px">“${esc(l.notes)}”</div>` : ''}
@@ -613,8 +621,8 @@ function data() {
           <input inputmode="numeric" data-act="set" data-k="restI" value="${S.settings.restI}"></label>
         <label class="fld"><span>Default reps</span>
           <input inputmode="numeric" data-act="set" data-k="defReps" value="${S.settings.defReps}"></label>
-        <label class="fld"><span>Default RPE</span>
-          <input inputmode="decimal" data-act="set" data-k="defRpe" value="${S.settings.defRpe}"></label>
+        <label class="fld"><span>Default reps in reserve</span>
+          <input inputmode="decimal" data-act="set" data-k="defRir" value="${S.settings.defRir}"></label>
       </div>
       <label class="row" style="gap:10px">
         <input type="checkbox" data-act="beep" ${S.settings.beep ? 'checked' : ''} style="width:24px;min-height:24px">
@@ -785,7 +793,7 @@ document.addEventListener('click', e => {
       if (!inp) break;
       const step = parseFloat(t.dataset.step);
       let v = num(inp.value) + step;
-      if (inp.dataset.field === 'rpe') v = Math.min(10, Math.max(1, v));
+      if (inp.dataset.field === 'rpe') v = Math.min(5, Math.max(0, v));
       inp.value = trim(Math.max(0, v));
       inp.dispatchEvent(new Event('input', { bubbles: true }));
       break;
@@ -871,7 +879,7 @@ document.addEventListener('input', e => {
     case 'set': {
       const k = t.dataset.k;
       S.settings[k] = k === 'unit' ? t.value
-        : k === 'defRpe' ? Math.min(10, Math.max(1, num(t.value) || 1))
+        : k === 'defRir' ? Math.min(5, Math.max(0, num(t.value)))
         : Math.max(1, parseInt(num(t.value), 10) || 1);
       save(); if (k === 'unit') render(); break;
     }
