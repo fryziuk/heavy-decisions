@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<!-- Screenshot helper: seeds a demo state, then opens the app. Not part of the app. -->
+<meta charset="utf-8">
+<script>
+const now = Date.now();
+const day = t => new Date(t).toISOString().slice(0, 10);
+const mode = new URLSearchParams(location.search).get('mode') || 'start';
+
+// one finished session last week so the Train screen shows history + targets
+const lastWeek = now - 7 * 864e5;
+const logs = [{
+  id: 'L' + lastWeek, day: 'A', start: lastWeek, end: lastWeek + 57 * 60000,
+  notes: 'felt strong',
+  sets: [
+    { slotId: 'a1', exId: 'hack-squat',      kind: 'top',  weight: 120,  reps: 8,  rpe: 9,  ts: lastWeek },
+    { slotId: 'a1', exId: 'hack-squat',      kind: 'back', weight: 120,  reps: 6 , rpe: 10, ts: lastWeek },
+    { slotId: 'a2', exId: 'inc-bb-press',    kind: 'top',  weight: 82.5, reps: 5,  rpe: 9,  ts: lastWeek },
+    { slotId: 'a2', exId: 'inc-bb-press',    kind: 'back', weight: 82.5, reps: 6,  rpe: 10, ts: lastWeek },
+    { slotId: 'a3', exId: 'cs-row',          kind: 'top',  weight: 90,   reps: 8,  rpe: 9,  ts: lastWeek },
+    { slotId: 'a3', exId: 'cs-row',          kind: 'back', weight: 90,   reps: 6 , rpe: 10, ts: lastWeek },
+    { slotId: 'a4', exId: 'seated-curl',     kind: 'top',  weight: 55,   reps: 10, rpe: 9,  ts: lastWeek },
+    { slotId: 'a4', exId: 'seated-curl',     kind: 'back', weight: 55,   reps: 8 , rpe: 10, ts: lastWeek },
+    { slotId: 'a5', exId: 'cable-lat-raise', kind: 'top',  weight: 12.5, reps: 12, rpe: 9,  ts: lastWeek },
+    { slotId: 'a5', exId: 'cable-lat-raise', kind: 'back', weight: 12.5, reps: 11, rpe: 10, ts: lastWeek },
+    { slotId: 'a6', exId: 'oh-cable-ext',    kind: 'top',  weight: 32.5, reps: 9,  rpe: 9,  ts: lastWeek },
+    { slotId: 'a6', exId: 'oh-cable-ext',    kind: 'back', weight: 32.5, reps: 8 , rpe: 10, ts: lastWeek },
+  ],
+}];
+
+const bw = [0, 3, 7, 10, 14, 17, 21].map(d =>
+  ({ d: day(now - d * 864e5), kg: +(82.4 + d * 0.09 + (d % 5) * 0.12).toFixed(1) }));
+
+let active = null;
+let tab = 'train';
+if (mode === 'session') {
+  active = {
+    day: 'A', start: now - 23 * 60000 - 41000, notes: '', restEnd: now + 154000,
+    picks: { a1: 'hack-squat', a2: 'inc-bb-press', a3: 'cs-row', a4: 'seated-curl', a5: 'cable-lat-raise', a6: 'oh-cable-ext' },
+    draft: {},
+    sets: [
+      { slotId: 'a1', exId: 'hack-squat', kind: 'top',  weight: 125, reps: 6,  rpe: 9,  ts: now - 18 * 60000 },
+      { slotId: 'a1', exId: 'hack-squat', kind: 'back', weight: 125, reps: 6, rpe: 10, ts: now - 14 * 60000 },
+      { slotId: 'a2', exId: 'inc-bb-press', kind: 'top', weight: 85, reps: 4,  rpe: 9,  ts: now - 60000 },
+    ],
+  };
+} else if (mode === 'body') tab = 'body';
+else if (mode === 'history') tab = 'history';
+
+localStorage.setItem('pumplog.v1', JSON.stringify({
+  v: 1,
+  settings: { unit: 'kg', restC: 180, restI: 90, targetMin: 60, beep: true, defReps: 5, defRpe: 1 },
+  exercises: {}, // load() refills the library
+  program: null, // load() reseeds when missing
+  logs, bw, active, ui: { tab },
+}));
+location.replace('./index.html' + (tab !== 'train' ? '?tab=' + tab : ''));
+</script>

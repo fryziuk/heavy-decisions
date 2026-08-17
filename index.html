@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Pump Log</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#14161a">
+<meta name="description" content="Two-day full-body workout logger for low-volume, high-effort training: two hard working sets per exercise.">
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Pump Log">
+<link rel="apple-touch-icon" href="./icon-180.png">
+<link rel="icon" href="./icon-192.png">
+<link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+
+<header id="top">
+  <div class="brand">
+    <strong>Pump<span>Log</span></strong>
+    <small id="topline">2&times; full body &middot; 2 hard sets</small>
+  </div>
+  <div id="sess" class="row hidden" style="gap:8px">
+    <div class="clock"><b id="clockTime">0:00</b><i id="clockTarget">/ 60m</i></div>
+    <button class="icon sessBtn" id="pauseBtn" data-act="pause" aria-label="Pause session">&#9208;</button>
+    <button class="icon sessBtn" data-act="stopSession" aria-label="Finish session">&#9632;</button>
+  </div>
+</header>
+
+<main id="view"></main>
+
+<div id="rest" class="rest hidden">
+  <div class="restInfo"><b id="restTime">2:30</b><i>rest</i></div>
+  <button class="ghost" data-rest="30">+30s</button>
+  <button class="ghost" data-rest="-30">&minus;30s</button>
+  <button class="ghost" data-rest="skip">Skip</button>
+</div>
+
+<nav id="tabs">
+  <button data-tab="train" class="on"><span>Train</span></button>
+  <button data-tab="history"><span>History</span></button>
+  <button data-tab="body"><span>Body</span></button>
+  <button data-tab="program"><span>Program</span></button>
+  <button data-tab="data"><span>Data</span></button>
+</nav>
+
+<script src="./app.js"></script>
+</body>
+</html>
