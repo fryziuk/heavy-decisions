@@ -1238,7 +1238,11 @@ $('#rest').addEventListener('click', e => {
 });
 
 document.querySelectorAll('#tabs button').forEach(b =>
-  b.addEventListener('click', () => { S.ui.tab = b.dataset.tab; save(); render(); }));
+  b.addEventListener('click', () => {
+    S.ui.tab = b.dataset.tab;
+    save(); render();
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }));
 
 /* ------------------------------------------------------------------- ticker */
 
