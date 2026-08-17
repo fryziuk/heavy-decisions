@@ -52,12 +52,12 @@ function seedProgram() {
     A: {
       name: 'Full Body A',
       slots: [
-        slot('a1', 'Quads',           'hack-squat',      ['hack-squat', 'pendulum-squat', 'leg-press', 'smith-squat', 'back-squat'], [6, 10], [6, 10], 'straight', 5, 'deep, control the negative'),
-        slot('a2', 'Horizontal Push', 'machine-press',   ['machine-press', 'inc-db-press', 'inc-bb-press', 'flat-bb-press', 'dip'], [6, 10], [6, 10], 'straight', 2.5, 'full stretch at the bottom, no bounce'),
-        slot('a3', 'Horizontal Pull', 'cs-row',          ['cs-row', 'seal-row', 'cable-row', 'db-row', 't-bar'], [6, 10], [6, 10], 'straight', 2.5, 'let the lats lengthen before each pull'),
+        slot('a1', 'Quads',           'back-squat',       ['back-squat', 'hack-squat', 'pendulum-squat', 'leg-press', 'smith-squat'], [6, 10], [6, 10], 'straight', 5, 'deep, control the negative'),
+        slot('a2', 'Horizontal Push', 'flat-bb-press',    ['flat-bb-press', 'machine-press', 'inc-db-press', 'inc-bb-press', 'dip'], [6, 10], [6, 10], 'straight', 2.5, 'full stretch at the bottom, no bounce'),
+        slot('a3', 'Horizontal Pull', 'db-row',           ['db-row', 'cs-row', 'seal-row', 'cable-row', 't-bar'], [6, 10], [6, 10], 'straight', 2.5, 'let the lats lengthen before each pull'),
         slot('a4', 'Hamstrings',      'seated-curl',     ['seated-curl', 'lying-curl', 'nordic'], [8, 12], [8, 12], 'straight', 2.5, 'seated beats lying — hams fully lengthened'),
-        slot('a5', 'Side Delts',      'cable-lat-raise', ['cable-lat-raise', 'db-lat-raise', 'machine-lat-raise'], [10, 15], [10, 15], 'straight', 1, 'stable setup, control every rep'),
-        slot('a6', 'Triceps',         'oh-cable-ext',    ['oh-cable-ext', 'skull', 'pushdown', 'dip-machine'], [8, 12], [8, 12], 'straight', 2.5, 'overhead = long head at full stretch'),
+        slot('a5', 'Side Delts',      'db-lat-raise',    ['db-lat-raise', 'cable-lat-raise', 'machine-lat-raise'], [10, 15], [10, 15], 'straight', 1, 'stable setup, control every rep'),
+        slot('a6', 'Triceps',         'pushdown',        ['pushdown', 'oh-cable-ext', 'skull', 'dip-machine'], [8, 12], [8, 12], 'straight', 2.5, 'keep elbows fixed; control the return'),
       ],
     },
     B: {
