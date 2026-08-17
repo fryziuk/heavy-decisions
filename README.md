@@ -61,9 +61,9 @@ and works with no connection.
 **Day A** — Quads · Horizontal Push · Horizontal Pull · Hamstrings · Side Delts · Triceps
 **Day B** — Hinge · Vertical Pull · Vertical Push · Quads · Biceps · Calves
 
-Defaults follow Paul Carter's low-volume, high-effort approach: stable exercise picks,
-mostly 5–10 reps (never above 12 by default), two sets near 2 RIR, and enough rest to
-keep the second set productive. Every muscle is hit twice a week at ~4 weekly sets.
+Defaults follow Paul Carter's low-volume, high-effort approach while matching rep ranges
+to the movement: 6–10 for most compounds, 8–12 for isolations, and 10–15 for lateral
+raises. Sets finish near 2 RIR with enough rest to keep the second set productive.
 No drop sets, giant sets, or finishers. Each slot's second set can be straight,
 rest-pause (RP), or lengthened partials (LP), and
 any slot can be switched to a classic **top set + back-off** structure in the Program

@@ -44,29 +44,28 @@ const slot = (id, label, pick, options, top, back, style, inc, cue, mode) =>
   ({ id, label, pick, options, top, back, style, inc, cue, mode: mode || 'straight2' });
 
 function seedProgram() {
-  /* Low-volume defaults: two straight working sets taken to ~1 rep in reserve,
-     full ROM, controlled negative, stretch-position picks, each muscle hit twice
-     a week at well under 10 weekly sets. Second set = same weight and range, not
-     a back-off. Calves finish with lengthened partials. 'topback' mode remains
-     available per-slot for anyone who wants a heavy single + back-off instead. */
+  /* Low-volume defaults: two straight working sets taken to ~2 reps in reserve.
+     Compounds live mostly in 6–10; isolations use 8–12 or 10–15 so load does not
+     come at the expense of control. Second set = same weight and range, not a
+     back-off. 'topback' mode remains available per slot. */
   return {
     A: {
       name: 'Full Body A',
       slots: [
-        slot('a1', 'Quads',           'hack-squat',      ['hack-squat', 'pendulum-squat', 'leg-press', 'smith-squat', 'back-squat'], [5, 8], [5, 8], 'straight', 5, 'deep, control the negative'),
-        slot('a2', 'Horizontal Push', 'machine-press',   ['machine-press', 'inc-db-press', 'inc-bb-press', 'flat-bb-press', 'dip'], [5, 8], [5, 8], 'straight', 2.5, 'full stretch at the bottom, no bounce'),
-        slot('a3', 'Horizontal Pull', 'cs-row',          ['cs-row', 'seal-row', 'cable-row', 'db-row', 't-bar'], [5, 8], [5, 8], 'straight', 2.5, 'let the lats lengthen before each pull'),
+        slot('a1', 'Quads',           'hack-squat',      ['hack-squat', 'pendulum-squat', 'leg-press', 'smith-squat', 'back-squat'], [6, 10], [6, 10], 'straight', 5, 'deep, control the negative'),
+        slot('a2', 'Horizontal Push', 'machine-press',   ['machine-press', 'inc-db-press', 'inc-bb-press', 'flat-bb-press', 'dip'], [6, 10], [6, 10], 'straight', 2.5, 'full stretch at the bottom, no bounce'),
+        slot('a3', 'Horizontal Pull', 'cs-row',          ['cs-row', 'seal-row', 'cable-row', 'db-row', 't-bar'], [6, 10], [6, 10], 'straight', 2.5, 'let the lats lengthen before each pull'),
         slot('a4', 'Hamstrings',      'seated-curl',     ['seated-curl', 'lying-curl', 'nordic'], [8, 12], [8, 12], 'straight', 2.5, 'seated beats lying — hams fully lengthened'),
-        slot('a5', 'Side Delts',      'cable-lat-raise', ['cable-lat-raise', 'db-lat-raise', 'machine-lat-raise'], [8, 12], [8, 12], 'straight', 1, 'stable setup, control every rep'),
-        slot('a6', 'Triceps',         'oh-cable-ext',    ['oh-cable-ext', 'skull', 'pushdown', 'dip-machine'], [6, 10], [6, 10], 'straight', 2.5, 'overhead = long head at full stretch'),
+        slot('a5', 'Side Delts',      'cable-lat-raise', ['cable-lat-raise', 'db-lat-raise', 'machine-lat-raise'], [10, 15], [10, 15], 'straight', 1, 'stable setup, control every rep'),
+        slot('a6', 'Triceps',         'oh-cable-ext',    ['oh-cable-ext', 'skull', 'pushdown', 'dip-machine'], [8, 12], [8, 12], 'straight', 2.5, 'overhead = long head at full stretch'),
       ],
     },
     B: {
       name: 'Full Body B',
       slots: [
-        slot('b1', 'Hinge',         'rdl',           ['rdl', 'good-morning', 'back-ext', 'lying-curl'], [5, 8], [5, 8], 'straight', 2.5, 'push hips back, feel the hamstring stretch'),
-        slot('b2', 'Vertical Pull', 'pulldown',      ['pulldown', 'neutral-pulldown', 'pullover', 'pullup'], [5, 8], [5, 8], 'straight', 2.5, 'full hang between reps, lats loaded long'),
-        slot('b3', 'Vertical Push', 'machine-ohp',   ['machine-ohp', 'db-ohp', 'bb-ohp'], [5, 8], [5, 8], 'straight', 2, 'machine stability lets you push hard with less noise'),
+        slot('b1', 'Hinge',         'rdl',           ['rdl', 'good-morning', 'back-ext', 'lying-curl'], [6, 10], [6, 10], 'straight', 2.5, 'push hips back, feel the hamstring stretch'),
+        slot('b2', 'Vertical Pull', 'pulldown',      ['pulldown', 'neutral-pulldown', 'pullover', 'pullup'], [6, 10], [6, 10], 'straight', 2.5, 'full hang between reps, lats loaded long'),
+        slot('b3', 'Vertical Push', 'machine-ohp',   ['machine-ohp', 'db-ohp', 'bb-ohp'], [8, 12], [8, 12], 'straight', 2, 'machine stability lets you push hard with less noise'),
         slot('b4', 'Quads',         'leg-press',     ['leg-press', 'hack-squat', 'bulgarian', 'leg-ext'], [8, 12], [8, 12], 'straight', 5, 'deep knee bend, slow eccentric'),
         slot('b5', 'Biceps',        'inc-db-curl',   ['inc-db-curl', 'ez-curl', 'cable-curl', 'preacher', 'hammer'], [8, 12], [8, 12], 'straight', 1, 'incline puts the elbow behind you — full stretch'),
         slot('b6', 'Calves',        'press-calf',    ['press-calf', 'standing-calf', 'seated-calf'], [8, 12], [8, 12], 'straight', 2.5, 'pause in the deep stretch; use full controlled reps'),
@@ -80,7 +79,7 @@ function seed() {
   LIBRARY.forEach(([id, name, kind]) => { ex[id] = { id, name, kind }; });
   return {
     v: 1,
-    settings: { unit: 'kg', restC: 180, restI: 120, targetMin: 60, beep: true, defReps: 5, defRir: 2 },
+    settings: { unit: 'kg', restC: 180, restI: 120, targetMin: 60, beep: true, defReps: 8, defRir: 2 },
     exercises: ex,
     program: seedProgram(),
     logs: [],
