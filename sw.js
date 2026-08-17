@@ -1,13 +1,14 @@
 /* Offline shell cache. Bump CACHE on every deploy so phones pick up new code. */
 
-const CACHE = 'pumplog-v12';
+const CACHE = 'pumplog-v13';
 const SHELL = [
   './', './index.html', './styles.css', './app.js',
   './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png',
 ];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  const fresh = SHELL.map(url => new Request(url, { cache: 'reload' }));
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(fresh)).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', e => {
@@ -25,7 +26,7 @@ self.addEventListener('fetch', e => {
   if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
 
   e.respondWith(
-    fetch(req)
+    fetch(req, { cache: 'no-store' })
       .then(res => {
         const copy = res.clone();
         caches.open(CACHE).then(c => c.put(req, copy)).catch(() => {});

@@ -4,6 +4,7 @@
 'use strict';
 
 const KEY = 'pumplog.v1';
+const PROGRAM_REV = 2;
 const $ = (s, r = document) => r.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
@@ -79,6 +80,7 @@ function seed() {
   LIBRARY.forEach(([id, name, kind]) => { ex[id] = { id, name, kind }; });
   return {
     v: 1,
+    programRev: PROGRAM_REV,
     settings: { unit: 'kg', restC: 180, restI: 120, targetMin: 60, beep: true, defReps: 8, defRir: 2 },
     exercises: ex,
     program: seedProgram(),
@@ -118,6 +120,27 @@ function load() {
         }
         if (!sl.mode) sl.mode = 'topback';
       }));
+      // Rev 2 changes only untouched Day A defaults. Custom selections survive.
+      if ((p.programRev || 0) < 2 && p.program && p.program.A) {
+        const replacements = {
+          a1: ['hack-squat', 'back-squat'],
+          a2: ['machine-press', 'flat-bb-press'],
+          a3: ['cs-row', 'db-row'],
+          a5: ['cable-lat-raise', 'db-lat-raise'],
+          a6: ['oh-cable-ext', 'pushdown'],
+        };
+        p.program.A.slots.forEach(sl => {
+          const change = replacements[sl.id];
+          if (!change || sl.pick !== change[0]) return;
+          sl.pick = change[1];
+          if (Array.isArray(sl.options) && sl.options.includes(change[1])) {
+            sl.options = [change[1], ...sl.options.filter(x => x !== change[1])];
+          }
+        });
+        p.programRev = PROGRAM_REV;
+        p.savedAt = Date.now();
+        localStorage.setItem(KEY, JSON.stringify(p));
+      }
       if (p.active) { p.active.pausedAt = p.active.pausedAt || 0; p.active.pausedMs = p.active.pausedMs || 0; }
       return p;
     }
