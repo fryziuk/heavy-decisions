@@ -1,6 +1,6 @@
 /* Offline shell cache. Bump CACHE on every deploy so phones pick up new code. */
 
-const CACHE = 'pumplog-v5';
+const CACHE = 'pumplog-v6';
 const SHELL = [
   './', './index.html', './styles.css', './app.js',
   './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png',

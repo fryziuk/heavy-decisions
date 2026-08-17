@@ -137,10 +137,13 @@ label.fld > span { display: block; font-size: 12px; color: var(--dim2); margin-b
 .cue { font-size: 12px; color: var(--dim2); font-style: italic; margin-top: 6px; }
 
 /* Sized against iPhone 14 Pro (390pt): 48 + 3 flexible steppers + 44 fits with room. */
-.setRow { display: grid; grid-template-columns: 40px 1.4fr 1fr 1fr 42px; gap: 6px; align-items: center;
+/* Top-aligned: the unit tags hang below the inputs, so centering the whole
+   column would lift the 44px boxes off the SET label / log button axis. */
+.setRow { display: grid; grid-template-columns: 40px 1.4fr 1fr 1fr 42px; gap: 6px; align-items: start;
   padding: 9px 10px; border-top: 1px solid var(--line); }
 .setRow.logged { background: rgba(52, 211, 153, .06); }
-.setKind { font-size: 11px; line-height: 1.25; }
+.setKind { font-size: 11px; line-height: 1.25; min-height: 44px;
+  display: flex; flex-direction: column; justify-content: center; }
 .setKind b { display: block; font-size: 12px; letter-spacing: .06em; }
 .setKind i { font-style: normal; color: var(--dim2); font-size: 10.5px; }
 
