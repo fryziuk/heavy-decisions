@@ -1,4 +1,4 @@
-# Pump Log
+# Heavy Decisions / Важкі рішення
 
 A workout logger for **two full-body sessions a week** of low-volume, high-effort
 training: **two straight working sets** per exercise — same weight, same rep range,
@@ -6,11 +6,8 @@ taken to about **2 reps in reserve** with controlled execution.
 Roughly 12 hard sets per session — it fits in an hour.
 
 Built for the phone: install it to your iPhone home screen, use it offline in the gym,
-and your data never leaves the device.
-
-| Train | Mid-session | Bodyweight |
-| :-: | :-: | :-: |
-| ![Start screen](docs/shot-start.png) | ![Logging a session](docs/shot-session.png) | ![Bodyweight trend](docs/shot-body.png) |
+and your data never leaves the device. The interface, install name, and app icon switch
+between English and Ukrainian.
 
 ## Why it's built this way
 

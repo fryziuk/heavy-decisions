@@ -1,4 +1,6 @@
 const EN = {
+  'brand.name': 'Heavy Decisions', 'brand.first': 'Heavy', 'brand.second': 'Decisions',
+  'meta.description': 'Two-day full-body workout logger for low-volume, high-effort training: two hard working sets per exercise.',
   'tagline': '2× full body · 2 hard sets',
   'tagline.setup': 'Personalize your starting weights',
   'language': 'Language', 'language.en': 'English', 'language.uk': 'Українська',
@@ -65,7 +67,7 @@ const EN = {
   'msg.bodyweightSaved': 'Bodyweight saved', 'msg.enterWeight': 'Enter a weight',
   'msg.heightRange': 'Enter height between 120 and 230 cm', 'msg.massRange': 'Enter body mass between 35 and 250 kg',
   'msg.benchRange': 'Enter bench 1RM between 20 and 300 kg', 'msg.ready': 'Ready · BMI {bmi}', 'msg.profileUpdated': 'Profile updated',
-  'msg.invalidJson': 'That is not valid JSON', 'msg.notBackup': 'Not a Pump Log backup', 'msg.backupRestored': 'Backup restored',
+  'msg.invalidJson': 'That is not valid JSON', 'msg.notBackup': 'Not a Heavy Decisions backup', 'msg.backupRestored': 'Backup restored',
   'msg.backupCopied': 'Backup copied', 'msg.clipboardBlocked': 'Clipboard blocked — use download', 'msg.allErased': 'All data erased',
   'msg.saveFailed': 'Could not save — storage full?', 'msg.recovered': 'Recovered data from backup copy',
   'msg.undoBeforeSwap': 'Undo this slot’s logged sets before swapping exercise',
@@ -90,6 +92,8 @@ const EN = {
 };
 
 const UK = {
+  'brand.name': 'Важкі рішення', 'brand.first': 'Важкі', 'brand.second': 'рішення',
+  'meta.description': 'Щоденник дводенної програми на все тіло: малий обсяг, висока інтенсивність і два важкі підходи на вправу.',
   'tagline': '2× усе тіло · 2 важкі підходи',
   'tagline.setup': 'Персоналізуйте стартові ваги',
   'language': 'Мова', 'language.en': 'English', 'language.uk': 'Українська',
@@ -156,7 +160,7 @@ const UK = {
   'msg.bodyweightSaved': 'Масу тіла збережено', 'msg.enterWeight': 'Введіть вагу',
   'msg.heightRange': 'Введіть зріст від 120 до 230 см', 'msg.massRange': 'Введіть масу від 35 до 250 кг',
   'msg.benchRange': 'Введіть 1ПМ жиму від 20 до 300 кг', 'msg.ready': 'Готово · ІМТ {bmi}', 'msg.profileUpdated': 'Профіль оновлено',
-  'msg.invalidJson': 'Це некоректний JSON', 'msg.notBackup': 'Це не резервна копія Pump Log', 'msg.backupRestored': 'Резервну копію відновлено',
+  'msg.invalidJson': 'Це некоректний JSON', 'msg.notBackup': 'Це не резервна копія «Важких рішень»', 'msg.backupRestored': 'Резервну копію відновлено',
   'msg.backupCopied': 'Резервну копію скопійовано', 'msg.clipboardBlocked': 'Буфер обміну заблоковано — скористайтеся завантаженням', 'msg.allErased': 'Усі дані стерто',
   'msg.saveFailed': 'Не вдалося зберегти — сховище заповнене?', 'msg.recovered': 'Дані відновлено з резервної копії',
   'msg.undoBeforeSwap': 'Скасуйте записані підходи цього слота перед заміною вправи',

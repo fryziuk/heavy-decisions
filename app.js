@@ -1,4 +1,4 @@
-/* Pump Log — 2x/week full-body logger for low-volume, high-effort training:
+/* Heavy Decisions — 2x/week full-body logger for low-volume, high-effort training:
    two straight working sets per exercise, ~2 RIR. Data never leaves the device. */
 
 'use strict';
@@ -459,6 +459,15 @@ function beep() {
 function render() {
   const needsSetup = !S.profile;
   document.documentElement.lang = L();
+  const ukrainian = L() === 'uk';
+  document.title = tr('brand.name');
+  $('#brandFirst').textContent = tr('brand.first');
+  $('#brandSecond').textContent = tr('brand.second');
+  document.querySelector('meta[name="description"]').content = tr('meta.description');
+  document.querySelector('meta[name="apple-mobile-web-app-title"]').content = tr('brand.name');
+  $('#manifestLink').href = ukrainian ? './manifest-uk.webmanifest' : './manifest.webmanifest';
+  $('#appleIcon').href = ukrainian ? './icon-uk-180.png' : './icon-180.png';
+  $('#favicon').href = ukrainian ? './icon-uk-192.png' : './icon-192.png';
   $('#topline').textContent = tr(needsSetup ? 'tagline.setup' : 'tagline');
   const tabKeys = { train: 'tab.train', history: 'tab.history', body: 'tab.body', program: 'tab.program', data: 'tab.data' };
   document.querySelectorAll('#tabs button').forEach(button => {
@@ -955,7 +964,7 @@ function exportData() {
   const blob = new Blob([JSON.stringify(S, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `pumplog-${dayKey(Date.now())}.json`;
+  a.download = `heavy-decisions-${dayKey(Date.now())}.json`;
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
 }

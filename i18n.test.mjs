@@ -9,6 +9,8 @@ test('Ukrainian browser locales select Ukrainian', () => {
 
 test('translations interpolate values and fall back safely', () => {
   assert.equal(translate('uk', 'train.startDay', { day: 'A' }), 'Почати день A');
+  assert.equal(translate('en', 'brand.name'), 'Heavy Decisions');
+  assert.equal(translate('uk', 'brand.name'), 'Важкі рішення');
   assert.equal(translate('uk', 'missing.key', {}, 'Custom name'), 'Custom name');
 });
 

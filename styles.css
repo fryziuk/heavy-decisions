@@ -1,4 +1,4 @@
-/* Pump Log — mobile-first, dark, big touch targets for gym use. */
+/* Heavy Decisions — mobile-first, dark, big touch targets for gym use. */
 
 :root {
   --bg: #14161a;
@@ -40,8 +40,10 @@ body { padding-bottom: calc(64px + var(--safe-b)); }
   border-bottom: 1px solid var(--line);
 }
 
-.brand strong { font-size: 19px; letter-spacing: -.02em; }
-.brand strong span { color: var(--accent); }
+.brand { min-width: 0; }
+.brand strong { display: block; overflow: hidden; font-size: 19px; line-height: 1.1; letter-spacing: -.035em; text-overflow: ellipsis; white-space: nowrap; }
+.brand strong #brandFirst { color: var(--ink); }
+.brand strong #brandSecond { color: var(--accent); }
 .brand small { display: block; color: var(--dim2); font-size: 12px; }
 
 .clock { text-align: right; font-variant-numeric: tabular-nums; }
@@ -49,6 +51,11 @@ body { padding-bottom: calc(64px + var(--safe-b)); }
 .clock i { display: block; font-style: normal; font-size: 11px; color: var(--dim2); }
 .clock.over b { color: var(--bad); }
 .sessBtn { font-size: 13px; border-radius: 10px; }
+
+@media (max-width: 374px) {
+  #top:has(#sess:not(.hidden)) .brand strong { font-size: 16px; }
+  #top:has(#sess:not(.hidden)) .brand small { display: none; }
+}
 
 /* ---------- layout ---------- */
 

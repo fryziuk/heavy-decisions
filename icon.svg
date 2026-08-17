@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Heavy Decisions icon">
+  <rect width="512" height="512" rx="112" fill="#14161a"/>
+  <rect x="64" y="92" width="384" height="328" rx="112" fill="#f59e0b"/>
+  <circle cx="256" cy="256" r="125" fill="#14161a"/>
+  <rect x="93" y="218" width="52" height="76" rx="24" fill="#14161a"/>
+  <rect x="367" y="218" width="52" height="76" rx="24" fill="#14161a"/>
+  <text x="256" y="291" text-anchor="middle" fill="#f59e0b" font-family="Arial, Helvetica, sans-serif" font-size="106" font-weight="900" letter-spacing="-8">HD</text>
+</svg>

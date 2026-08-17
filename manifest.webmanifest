@@ -1,7 +1,8 @@
 {
-  "name": "Pump Log",
-  "short_name": "Pump Log",
+  "name": "Heavy Decisions",
+  "short_name": "Heavy Decisions",
   "description": "Two-day full-body workout logger for low-volume, high-effort training: two hard working sets per exercise.",
+  "lang": "en",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
